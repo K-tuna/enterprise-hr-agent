@@ -190,7 +190,7 @@ print(f"{'='*60}\n")
 # %%
 # 셀 9: 테스트 - RAG 질문
 
-rag_question = "연차는 몇일인가요?"
+rag_question = "연차휴가는 몇일인가요?"
 
 print(f"\n{'='*60}")
 print(f"테스트 질문: {rag_question}")
