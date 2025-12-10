@@ -119,14 +119,14 @@
 - [x] Dockerfile (Python 3.11 기반)
 - [x] docker-compose.yml (DB + API)
 - [x] .dockerignore
-- [x] Docker Compose 설정 완료
-- [x] 로컬 테스트 완료
+- [x] MySQL 컨테이너 실행 확인
+- [x] FastAPI Health Check 성공
 
 **API 테스트:**
 - [x] Swagger UI 사용 가능 (/docs)
 - [x] 루트/Health 엔드포인트 확인
 - [x] test_api.py 스크립트 작성
-- [x] SQL/RAG 질문 테스트 준비 완료
+- [x] curl 테스트 성공
 
 **주요 성과:**
 - ✅ 현업 표준 FastAPI 구조 (15개 파일)
@@ -135,11 +135,30 @@
 - ✅ API 문서 자동 생성 (Swagger/ReDoc)
 - ✅ CORS, 의존성 주입, Pydantic 검증
 
+---
+
+## 🚧 진행 중 / 미착수
+
 ### Phase 6: 마무리 (14-16h) ⏭️ 미착수
-- [ ] 수동 테스트 (10개 시나리오)
-- [ ] 시연 영상 촬영 (GIF)
-- [ ] README 완성
-- [ ] (선택) 배포
+**README 작성:**
+- [ ] 프로젝트 소개
+- [ ] 기술 스택 설명
+- [ ] 아키텍처 다이어그램
+- [ ] 설치 및 실행 방법
+- [ ] API 사용 예시
+- [ ] 핵심 기능 설명
+
+**테스트 시나리오:**
+- [ ] SQL 질문 5개 (간단/복잡/Self-Correction)
+- [ ] RAG 질문 5개 (규정/복지/휴가)
+- [ ] Router 정확도 확인
+- [ ] 오류 처리 확인
+
+**선택 사항:**
+- [ ] 시연 GIF 제작
+- [ ] 배포 (Railway/Render)
+- [ ] 성능 최적화
+- [ ] 추가 문서화
 
 ---
 
@@ -228,39 +247,57 @@ result = chain.run(question="...")
 
 ```
 c:\workspace\enterprise-hr-agent\
-├─ core/
+├─ core/                              # 프로덕션 Agent 코드
 │  ├─ db_connection.py       ✅ DB 연결 헬퍼
 │  ├─ sql_agent.py            ✅ SQL Agent 클래스
 │  ├─ rag_agent.py            ✅ RAG Agent 클래스
 │  ├─ router.py               ✅ Router 클래스
 │  └─ graph.py                ✅ HRAgent 통합 클래스
 │
-├─ experiments/
-│  ├─ exp_01_sql_generation.py      ✅ SQL 생성 (학습)
-│  ├─ exp_02_self_correction.py     ✅ Self-Correction (학습)
-│  ├─ exp_03_langgraph_sql.py       ✅ LangGraph 구현 (9셀)
-│  ├─ exp_04_sql_agent_test.py      ✅ 프로덕션 테스트 (7셀)
-│  ├─ exp_05_document_loading.py    ✅ 문서 로드 + 청킹 (학습)
-│  ├─ exp_06_faiss_index.py         ✅ FAISS 인덱스 + 검색 (학습)
-│  ├─ exp_07_rag_chain.py           ✅ RAG Chain 구현 (학습)
-│  ├─ exp_08_rag_agent_test.py      ✅ 프로덕션 테스트
-│  ├─ exp_09_router.py              ✅ Router 실험 (6셀)
-│  ├─ exp_10_graph.py               ✅ 통합 그래프 실험 (9셀)
-│  └─ exp_11_integration_test.py    ✅ 통합 테스트 (10셀)
+├─ app/                              # FastAPI 애플리케이션 (현업 구조)
+│  ├─ main.py                 ✅ FastAPI 앱 진입점
+│  ├─ core/
+│  │  ├─ config.py           ✅ 환경 설정
+│  │  └─ deps.py             ✅ 의존성 주입
+│  ├─ models/
+│  │  ├─ request.py          ✅ Pydantic 요청 모델
+│  │  └─ response.py         ✅ Pydantic 응답 모델
+│  ├─ services/
+│  │  └─ hr_service.py       ✅ 비즈니스 로직
+│  └─ api/v1/
+│     ├─ api.py              ✅ 라우터 통합
+│     └─ endpoints/
+│        ├─ query.py         ✅ POST /query
+│        └─ health.py        ✅ GET /health
+│
+├─ experiments/                      # 학습용 실험 파일 (셀 단위)
+│  ├─ exp_01_sql_generation.py      ✅ SQL 생성
+│  ├─ exp_02_self_correction.py     ✅ Self-Correction
+│  ├─ exp_03_langgraph_sql.py       ✅ LangGraph 구현
+│  ├─ exp_04_sql_agent_test.py      ✅ SQL Agent 테스트
+│  ├─ exp_05_document_loading.py    ✅ 문서 로드 + 청킹
+│  ├─ exp_06_faiss_index.py         ✅ FAISS 인덱스 생성
+│  ├─ exp_07_rag_chain.py           ✅ RAG Chain 구현
+│  ├─ exp_08_rag_agent_test.py      ✅ RAG Agent 테스트
+│  ├─ exp_09_router.py              ✅ Router 실험
+│  ├─ exp_10_graph.py               ✅ 통합 그래프 실험
+│  └─ exp_11_integration_test.py    ✅ 통합 테스트
 │
 ├─ data/
 │  ├─ db_init/init.sql        ✅ 초기 DB 스키마
 │  ├─ company_docs/           ✅ 회사 규정 문서 (TXT + PDF)
-│  └─ faiss_index/            ✅ FAISS 인덱스 저장 완료
+│  └─ faiss_index/            ✅ FAISS 인덱스 저장
 │
-├─ app/                       ⏭️ FastAPI 앱 (미착수)
 ├─ docs/
 │  ├─ PLANNING.md             ✅ 원래 계획서
 │  └─ CONTEXT.md              ✅ 이 문서 (인수인계)
 │
-├─ requirements.txt           ✅
-├─ docker-compose.yml         ✅
-└─ README.md                  🔄 업데이트 필요
+├─ Dockerfile                 ✅ Python 3.11 기반
+├─ docker-compose.yml         ✅ DB + API 통합
+├─ .dockerignore              ✅ 빌드 최적화
+├─ requirements.txt           ✅ 의존성 목록
+├─ test_api.py                ✅ API 테스트 스크립트
+└─ README.md                  🔄 작성 필요 (Phase 6)
 ```
 
 ---
@@ -294,28 +331,41 @@ Phase 6: 마무리           ···················· 0%   ⏭�
 
 ## 🎯 다음 세션 시작점
 
-### 즉시 시작할 작업: Phase 5 (FastAPI)
+### 즉시 시작할 작업: Phase 6 (마무리)
 
-**Step 1: FastAPI 서버 구축**
-```
-app/main.py 생성
-- FastAPI 앱 초기화
-- POST /query 엔드포인트
-- GET /health 엔드포인트
-- CORS 설정
+**Step 1: README 작성 (최우선!)**
+```markdown
+## 프로젝트 소개
+- 무엇을 만들었는가?
+- 왜 만들었는가?
+- 어떤 기술을 사용했는가?
+
+## 주요 기능
+- SQL Agent (Text-to-SQL + Self-Correction)
+- RAG Agent (FAISS 벡터 검색)
+- Router (자동 분기)
+
+## 실행 방법
+docker-compose up -d
+curl http://localhost:8000/api/v1/health
 ```
 
-**Step 2: 테스트**
-```
-- Postman/curl로 API 테스트
-- 다양한 질문 시나리오
-- 오류 처리 확인
+**Step 2: 통합 테스트 (선택)**
+```python
+# test_api.py 실행
+python test_api.py
 ```
 
-**예상 작업량:**
-- app/main.py 구현 (약 100-150줄)
-- app/__init__.py
-- 수동 테스트 (10개 시나리오)
+**Step 3: 마무리 체크리스트**
+- [ ] README.md 완성
+- [ ] 코드 정리 (주석, 포맷팅)
+- [ ] 불필요한 파일 제거
+- [ ] Git 최종 커밋
+
+**예상 시간:**
+- README: 30분~1시간
+- 테스트 정리: 30분
+- 최종 점검: 30분
 
 ---
 
@@ -440,10 +490,8 @@ result = agent.query("연차 규정은?")
 - [x] Phase 2 완료 ✅
 - [x] Phase 3 완료 ✅
 - [x] Phase 4 완료 ✅
-- [ ] Phase 5 시작: FastAPI
-- [ ] app/main.py 구현
-- [ ] API 테스트
-- [ ] Phase 6: 마무리
+- [x] Phase 5 완료 ✅
+- [ ] Phase 6: README 작성 + 마무리
 
-**화이팅! 🚀 이제 80% 완료, API만 만들면 끝!**
+**화이팅! 🚀 이제 95% 완료, README만 쓰면 끝!**
 
