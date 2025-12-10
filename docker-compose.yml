@@ -21,7 +21,26 @@ services:
       timeout: 20s
       retries: 10
 
-  # Vector Search: FAISS (Python 코드 내 Embedded 모드)
+  # FastAPI 애플리케이션
+  api:
+    build: .
+    container_name: hr_api_container
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DATABASE_URL=mysql+pymysql://user:password@db:3306/enterprise_hr_db
+    volumes:
+      - ./app:/app/app
+      - ./core:/app/core
+      - ./data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - agent_net
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 networks:
   agent_net:

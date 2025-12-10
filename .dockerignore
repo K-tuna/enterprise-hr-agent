@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Data (볼륨으로 마운트하므로 전체 제외)
+data/
+*.db
+
+# Experiments (개발용, 프로덕션 불필요)
+experiments/
+
+# Docs (README는 포함)
+docs/
+PLANNING.md
+CONTEXT.md
+
+# Environment
+.env.local
+.env.*.local
+

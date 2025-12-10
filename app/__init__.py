@@ -1,7 +1,5 @@
 """
-Enterprise HR Agent - FastAPI Application
+FastAPI Application Package
 """
 
-
-
-
+__version__ = "1.0.0"
