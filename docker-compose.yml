@@ -20,6 +20,8 @@ services:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
       retries: 10
+    mem_limit: 256m
+    mem_reservation: 200m
 
   # FastAPI 애플리케이션
   api:
@@ -30,7 +32,7 @@ services:
       - "8000:8000"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - DATABASE_URL=mysql+pymysql://user:password@db:3306/enterprise_hr_db
+      - DATABASE_URL=mysql+pymysql://user:password@db:3306/enterprise_hr_db?charset=utf8mb4
     volumes:
       - ./app:/app/app
       - ./core:/app/core
@@ -41,6 +43,39 @@ services:
     networks:
       - agent_net
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    mem_limit: 350m
+    mem_reservation: 300m
+
+  # Streamlit 프론트엔드
+  streamlit:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: hr-streamlit:latest
+    container_name: hr_streamlit_container
+    restart: always
+    ports:
+      - "8501:8501"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MYSQL_HOST=db
+      - MYSQL_PORT=3306
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+      - MYSQL_DATABASE=enterprise_hr_db
+    volumes:
+      - ./frontend:/app/frontend
+      - ./core:/app/core
+      - ./data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_started
+    networks:
+      - agent_net
+    mem_limit: 200m
+    mem_reservation: 150m
 
 networks:
   agent_net:

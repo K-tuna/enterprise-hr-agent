@@ -1,4 +1,8 @@
-CREATE DATABASE IF NOT EXISTS enterprise_hr_db;
+-- UTF-8 인코딩 설정
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
+CREATE DATABASE IF NOT EXISTS enterprise_hr_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE enterprise_hr_db;
 
 -- 1. 부서 정보
@@ -53,8 +57,8 @@ CREATE TABLE IF NOT EXISTS attendance (
 );
 
 -- 더미 데이터 삽입
-INSERT INTO departments (name, location) VALUES 
-('Engineering', 'Seoul'), ('Sales', 'Busan'), ('HR', 'Seoul');
+INSERT INTO departments (name, location) VALUES
+('개발', '서울'), ('영업', '부산'), ('인사', '서울');
 
 INSERT INTO employees (name, email, dept_id, position, join_date, status) VALUES
 ('김철수', 'cs.kim@techcorp.com', 1, 'Team Lead', '2020-01-10', 'ACTIVE'),
@@ -73,5 +77,26 @@ INSERT INTO evaluations (emp_id, year, quarter, score, feedback) VALUES
 (2, 2023, 4, 4.2, '기술적 역량은 뛰어나나 커뮤니케이션 스킬 향상이 필요함.'),
 (3, 2023, 4, 4.9, '분기 매출 목표를 150% 달성함. 탁월한 영업 성과.'),
 (4, 2023, 3, 3.5, '업무 습득 속도가 다소 느림. 적극적인 태도 필요.');
+
+INSERT INTO attendance (emp_id, date, check_in, check_out, status) VALUES
+-- 김철수 (4건)
+(1, '2024-01-02', '08:55', '18:10', 'PRESENT'),
+(1, '2024-01-03', '09:15', '18:30', 'LATE'),
+(1, '2024-01-04', '08:50', '18:00', 'PRESENT'),
+(1, '2024-01-05', NULL, NULL, 'VACATION'),
+-- 이영희 (4건)
+(2, '2024-01-02', '08:45', '18:05', 'PRESENT'),
+(2, '2024-01-03', '08:50', '18:20', 'PRESENT'),
+(2, '2024-01-04', '09:20', '18:15', 'LATE'),
+(2, '2024-01-05', '08:55', '18:00', 'PRESENT'),
+-- 박민수 (4건)
+(3, '2024-01-02', '09:00', '19:00', 'PRESENT'),
+(3, '2024-01-03', NULL, NULL, 'ABSENT'),
+(3, '2024-01-04', '08:40', '18:30', 'PRESENT'),
+(3, '2024-01-05', '08:55', '18:10', 'PRESENT'),
+-- 최지우 (3건 - 휴직 중이라 적음)
+(4, '2024-01-02', '09:00', '18:00', 'PRESENT'),
+(4, '2024-01-03', '08:50', '18:05', 'PRESENT'),
+(4, '2024-01-04', NULL, NULL, 'VACATION');
 
 

@@ -8,11 +8,12 @@ from fastapi import APIRouter
 from app.models import HealthResponse
 from app.core.config import settings
 
-router = APIRouter()
+# 🔥 prefix 필수
+router = APIRouter(prefix="/health")
 
 
 @router.get(
-    "/health",
+    "",
     response_model=HealthResponse,
     summary="헬스체크",
     description="API 서버 상태 확인",
@@ -28,4 +29,3 @@ async def health() -> HealthResponse:
         status="healthy",
         version=settings.VERSION
     )
-

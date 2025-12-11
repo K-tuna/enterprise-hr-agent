@@ -9,3 +9,6 @@ from app.models.response import QueryResponse, HealthResponse
 
 __all__ = ["QueryRequest", "QueryResponse", "HealthResponse"]
 
+
+
+

@@ -14,3 +14,6 @@ api_router = APIRouter()
 api_router.include_router(query.router, tags=["Query"])
 api_router.include_router(health.router, tags=["Health"])
 
+
+
+

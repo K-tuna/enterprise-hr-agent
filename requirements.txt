@@ -19,6 +19,7 @@ faiss-cpu==1.9.0.post1
 # === Database ===
 sqlalchemy==2.0.36
 pymysql==1.1.1
+cryptography==44.0.0
 
 # === API Server ===
 fastapi==0.115.6
@@ -29,3 +30,8 @@ pydantic==2.10.3
 pydantic-settings==2.6.1
 python-dotenv==1.0.1
 pypdf==5.1.0
+
+# === Frontend ===
+streamlit==1.40.2
+
+watchfiles

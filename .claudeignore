@@ -1,0 +1,3 @@
+# 트러블슈팅 상세 파일 제외 (요약만 읽음)
+docs/troubleshooting/
+!docs/troubleshooting/README.md
