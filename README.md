@@ -312,22 +312,14 @@ template = """
 
 ---
 
-## 💡 확장 가능성
+## 🗺️ Roadmap
 
-이 프로젝트는 **프로덕션 레벨의 기반**을 갖추고 있어, 다양한 방향으로 확장 가능합니다:
+| Version | Focus | Key Features |
+|---------|-------|--------------|
+| **v1.0** ✅ | 기본 완성 | SQL Agent, RAG Agent, Router |
+| v1.1 | RAG 고도화 | Hybrid Search, Re-ranking |
+| v1.2 | SQL 고도화 | Caching, Validation |
+| v2.0 | 고급 기능 | Agentic RAG, Local LLM |
 
-**Agent 확장**
-- Tool Agent: 외부 API 연동 (Slack, Jira 등)
-- Vision Agent: 문서 이미지 분석
-- Memory Agent: 장기 대화 컨텍스트
-
-**성능 최적화**
-- Query Expansion으로 RAG 정확도 향상
-- Hybrid Search (BM25 + Vector) 적용
-- 캐싱 레이어 추가
-
-**프로덕션 기능**
-- SSE 스트리밍 응답
-- Human-in-the-loop (위험 쿼리 승인)
-- 대화 히스토리 & 세션 관리
+👉 [상세 로드맵](docs/ROADMAP.md)
 
