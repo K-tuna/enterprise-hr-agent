@@ -17,7 +17,11 @@ if not openai_api_key:
 
 # 프로젝트 루트
 PROJECT_ROOT = Path(__file__).parent.parent
-DOCS_PATH = PROJECT_ROOT / "data" / "company_docs" / "회사규정.pdf"
+
+# 설정 (파일명 변경 시 여기만 수정)
+DOCS_FILENAME = "02_회사규정.pdf"
+
+DOCS_PATH = PROJECT_ROOT / "data" / "company_docs" / DOCS_FILENAME
 INDEX_PATH = PROJECT_ROOT / "data" / "faiss_index"
 
 print(f"[OK] 환경 설정 완료")
@@ -151,4 +155,7 @@ print("[OK] FAISS 인덱스 생성 및 검색 완료!")
 print("다음 단계: exp_07에서 RAG Chain 구현")
 
 # %%
+
+
+
 

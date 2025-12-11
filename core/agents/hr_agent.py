@@ -141,6 +141,15 @@ class HRAgent:
         Returns:
             AgentResult: 통일된 결과 형식
         """
+        # 빈 문자열 검증
+        if not question or not question.strip():
+            return AgentResult(
+                success=False,
+                answer="질문을 입력해주세요.",
+                metadata={"agent_type": "VALIDATION"},
+                error="Empty question",
+            )
+
         initial_state: HRAgentState = {
             "question": question,
             "agent_type": "",

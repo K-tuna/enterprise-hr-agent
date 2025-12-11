@@ -1,15 +1,15 @@
-# 🤖 Enterprise HR AI Agent
-
 <div align="center">
 
-**자연어로 질문하면 자동으로 SQL 실행하거나 사규 검색해주는 Multi-Agent 시스템**
+# 🤖 Enterprise HR AI Agent
+
+**자연어로 질문하면 자동으로 SQL 실행하거나 사규 검색해드립니다**
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![LangChain](https://img.shields.io/badge/LangChain-0.3.27-1C3C3C?style=flat)](https://www.langchain.com/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
 
-![demo](https://github.com/user-attachments/assets/6a8927bf-45f8-403c-9994-a74485fcfdfa)
+![demo](assets/demo.gif)
 
 <details>
    <summary>이전 버전</summary>

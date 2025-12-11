@@ -21,9 +21,11 @@ st.set_page_config(
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# 헤더
-st.title("🤖 Enterprise HR AI Agent")
-st.markdown("**자연어로 질문하면 자동으로 SQL 실행하거나 사규 검색해드립니다**")
+# 헤더 (중앙 정렬)
+st.markdown("""
+<h1 style='text-align: center;'>🤖 Enterprise HR AI Agent</h1>
+<p style='text-align: center;'><b>자연어로 질문하면 자동으로 SQL 실행하거나 사규 검색해드립니다</b></p>
+""", unsafe_allow_html=True)
 
 # 사이드바 - 정보
 with st.sidebar:
