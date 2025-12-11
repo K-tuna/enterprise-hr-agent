@@ -9,8 +9,12 @@
 [![LangChain](https://img.shields.io/badge/LangChain-0.3.27-1C3C3C?style=flat)](https://www.langchain.com/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
 
-<img width="1918" height="909" alt="image" src="https://github.com/user-attachments/assets/68e35916-5ef4-411c-bb34-4da47bfb8413" />
+![demo](https://github.com/user-attachments/assets/6a8927bf-45f8-403c-9994-a74485fcfdfa)
 
+<details>
+   <summary>이전 버전</summary>
+      <img width="1918" height="909" alt="image" src="https://github.com/user-attachments/assets/68e35916-5ef4-411c-bb34-4da47bfb8413" />
+</details>
 
 </div>
 
