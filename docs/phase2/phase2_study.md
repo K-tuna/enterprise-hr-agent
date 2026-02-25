@@ -3,7 +3,7 @@
 > **목적**: Phase 2 구현에 필요한 개념과 기술을 체계적으로 학습
 > **대상**: Python 기초 지식이 있는 초보 개발자
 > **학습 방식**: 개념 이해 → 실습 → 구현 → 검증 사이클
-> **버전**: 3.1 (2025-01-16, PRD v2.1 동기화 - RAG 먼저, SQL 나중)
+> **버전**: 3.2 (2025-02-21, PRD v2.2 동기화 - OpenSearch 하이브리드 서치)
 
 ---
 
@@ -37,8 +37,9 @@ Week 2: 평가 시스템 (RAGAS, Execution Accuracy)
 
 Week 3: RAG Agent 고도화 (2025 SOTA) - 빠르게 완료
   ├─ Day 1-2: Chunking 최적화 (200-300 단어)
-  ├─ Day 3-4: Hybrid Search (BM25 + FAISS)
-  └─ Day 5: Reranker (Cross-encoder) 적용
+  ├─ Day 3-4: Hybrid Search (BM25 + FAISS 실험)
+  ├─ Day 5-6: OpenSearch Hybrid 실험/평가 비교 + 프로덕션 마이그레이션
+  └─ Day 7: Reranker (Cross-encoder) 적용
 
 Week 4: SQL Agent 고도화 (2025 SOTA) - 차별화 포인트 ★
   ├─ Day 1: Schema Enhancement (컬럼 설명 추가)
@@ -74,10 +75,10 @@ Schema Enhancement → Few-shot → Masked Few-shot → CoT → SQLCoder
 
 **RAG Agent 고도화 순서 (SOTA)**:
 ```
-Chunking 최적화 → Hybrid Search → Reranker
-   (+10~20%)        (+15~25%)      (+42%)
+Chunking 최적화 → Hybrid Search(FAISS) → OpenSearch 실험/비교 → 마이그레이션 → Reranker
+   (+10~20%)         (실험)              (프로덕션 전환)                          (+42%)
 ```
-> 참고: Hybrid로 recall 확보 → Reranker로 precision 향상
+> 참고: FAISS로 하이브리드 서치 개념 실험 → OpenSearch 네이티브로 프로덕션 전환 → Reranker로 precision 향상
 
 ### 1.3 학습 원칙
 
@@ -1083,9 +1084,11 @@ for q in questions:
 ### 5.1 학습 목표
 
 - [ ] Chunking 최적화 이유 이해
-- [ ] Hybrid Search (BM25 + FAISS) 구현
+- [ ] Hybrid Search (BM25 + FAISS) 실험
+- [ ] **OpenSearch 네이티브 hybrid query 이해 및 실험**
+- [ ] **FAISS vs OpenSearch 평가 비교 (RAGAS)**
 - [ ] Reranker (Cross-encoder) 개념
-- [ ] 2025 현업 표준 순서: Chunking → Hybrid → Reranker
+- [ ] 2025 현업 표준 순서: Chunking → Hybrid(실험) → OpenSearch(프로덕션) → Reranker
 
 ### 5.2 핵심 개념
 
@@ -1111,6 +1114,23 @@ for q in questions:
 ```
 
 > **참고**: [RAG Best Practices 2025](https://orkes.io/blog/rag-best-practices/)
+
+**FAISS vs OpenSearch - 왜 OpenSearch가 현업 표준인가?**
+
+```
+FAISS 방식 (직접 조립):
+  FAISS(벡터) + rank_bm25(키워드) + Kiwi(토크나이저) + RRF(융합)
+  → 직접 구현해야 할 것이 많음, 프로덕션 운영 어려움
+
+OpenSearch 방식 (현업 표준):
+  OpenSearch가 BM25 + kNN + Nori(한국어) + search pipeline 모두 내장
+  → DB-Engines 벡터 DBMS 랭킹 2위 (점수 20.04)
+  → Docker 한 줄로 환경 구성
+
+프로젝트 접근:
+  1. FAISS로 하이브리드 서치 "개념" 실험 (학습 목적)
+  2. OpenSearch로 "프로덕션" 전환 (평가 비교 후)
+```
 
 #### 5.2.2 최적 청크 크기
 
@@ -1140,7 +1160,38 @@ Vector (의미 검색):
 
 Hybrid = BM25 + Vector
   → 두 방법의 장점 결합
-  → Reciprocal Rank Fusion (RRF)으로 결합
+
+구현 방식 비교:
+  FAISS 방식: rank_bm25 + FAISS + EnsembleRetriever (수동 조립)
+  OpenSearch 방식: hybrid query + search pipeline (네이티브 내장)
+```
+
+#### 5.2.5 OpenSearch 핵심 개념
+
+```
+OpenSearch란?
+  - Elasticsearch의 오픈소스 포크 (AWS 주도)
+  - DB-Engines 벡터 DBMS 랭킹 2위 (Elasticsearch 1위)
+  - BM25 + 벡터 검색 + 한국어 분석 모두 내장
+
+Nori 한국어 분석기:
+  - OpenSearch 공식 이미지에 기본 포함
+  - 한국어 형태소 분석 (rank_bm25 + Kiwi를 대체)
+  - 예: "연차 신청 방법" → ["연차", "신청", "방법"]
+
+Hybrid Query:
+  하나의 쿼리에서 BM25(match) + kNN(벡터) 동시 실행
+  search pipeline이 두 점수를 정규화/결합
+
+Search Pipeline:
+  - normalization-processor: 점수 정규화 (min_max)
+  - combination: 가중치 결합 (arithmetic_mean)
+  - 가중치 조절 가능: BM25 50% + kNN 50% (기본)
+
+knn_vector:
+  - HNSW 알고리즘 (Lucene 엔진)
+  - cosine similarity
+  - 1024 차원 (snowflake-arctic-embed-l-v2.0-ko)
 ```
 
 #### 5.2.4 Reranker vs Bi-encoder
@@ -1214,14 +1265,17 @@ for i, chunk in enumerate(chunks):
     print()
 ```
 
-### 5.4 실습 2: Hybrid Search
+### 5.4 실습 2: Hybrid Search (BM25 + FAISS 실험)
+
+> **참고**: 이 실습은 하이브리드 서치 개념 학습용입니다.
+> 실습 2.5에서 OpenSearch 네이티브 방식으로 전환합니다.
 
 ```python
-# hybrid_search_2025.py - Hybrid Search (2025 표준)
+# hybrid_search_2025.py - Hybrid Search (FAISS 실험용)
 
 """
 BM25 + FAISS Hybrid Search
-LangChain EnsembleRetriever 사용
+LangChain EnsembleRetriever 사용 (학습/실험 목적)
 """
 
 from langchain.retrievers import EnsembleRetriever
@@ -1261,6 +1315,174 @@ print(f"질문: {query}\n")
 print("=== Hybrid Search 결과 ===")
 for i, doc in enumerate(results):
     print(f"{i+1}. {doc.page_content}")
+```
+
+### 5.4.5 실습 2.5: OpenSearch Hybrid Search (프로덕션 표준) ★신규
+
+> **이 실습이 진짜 현업 표준입니다.** Docker + OpenSearch로 프로덕션 환경 구성.
+
+#### Step 1: Docker로 OpenSearch 시작
+
+```bash
+# docker-compose.yml에 opensearch 서비스 추가 후
+docker-compose up opensearch -d
+
+# Nori 플러그인 확인
+curl http://localhost:9200/_cat/plugins
+# analysis-nori 2.18.0
+```
+
+#### Step 2: OpenSearch 연결 및 인덱스 생성
+
+```python
+# opensearch_hybrid_practice.py - OpenSearch Hybrid Search 실습
+
+"""
+OpenSearch 네이티브 Hybrid Search 실습
+현업 표준: BM25(Nori) + kNN(벡터) 동시 실행
+"""
+
+from opensearchpy import OpenSearch
+
+# 1. OpenSearch 연결
+client = OpenSearch(
+    hosts=[{"host": "localhost", "port": 9200}],
+    use_ssl=False
+)
+
+# 연결 확인
+info = client.info()
+print(f"OpenSearch 버전: {info['version']['number']}")
+
+# 2. 인덱스 생성 (Nori + kNN)
+index_name = "hr_documents_test"
+
+index_body = {
+    "settings": {
+        "analysis": {
+            "analyzer": {
+                "nori_analyzer": {
+                    "type": "custom",
+                    "tokenizer": "nori_tokenizer"
+                }
+            }
+        },
+        "index.knn": True
+    },
+    "mappings": {
+        "properties": {
+            "content": {
+                "type": "text",
+                "analyzer": "nori_analyzer"
+            },
+            "content_embedding": {
+                "type": "knn_vector",
+                "dimension": 1024,
+                "method": {
+                    "name": "hnsw",
+                    "space_type": "cosinesimil",
+                    "engine": "lucene"
+                }
+            }
+        }
+    }
+}
+
+# 기존 인덱스 삭제 후 생성
+if client.indices.exists(index=index_name):
+    client.indices.delete(index=index_name)
+client.indices.create(index=index_name, body=index_body)
+print(f"인덱스 '{index_name}' 생성 완료")
+```
+
+#### Step 3: 데이터 적재 및 Hybrid 검색
+
+```python
+# 3. 문서 적재 (임베딩 포함)
+from langchain_huggingface import HuggingFaceEmbeddings
+
+embeddings = HuggingFaceEmbeddings(
+    model_name="Snowflake/snowflake-arctic-embed-l-v2.0",
+    model_kwargs={"trust_remote_code": True}
+)
+
+docs = [
+    "연차 신청은 인사시스템에서 3일 전까지 신청해야 합니다.",
+    "신입사원 교육은 입사 첫 주에 진행됩니다.",
+    "휴가 사용 시 팀장 승인이 필요합니다.",
+    "연봉 협상은 매년 1월에 진행됩니다.",
+]
+
+for i, doc in enumerate(docs):
+    vector = embeddings.embed_query(doc)
+    client.index(
+        index=index_name,
+        body={"content": doc, "content_embedding": vector},
+        id=i
+    )
+
+client.indices.refresh(index=index_name)
+print(f"{len(docs)}개 문서 적재 완료")
+
+# 4. Search Pipeline 생성
+pipeline_body = {
+    "description": "HR hybrid search pipeline",
+    "phase_results_processors": [
+        {
+            "normalization-processor": {
+                "normalization": {"technique": "min_max"},
+                "combination": {
+                    "technique": "arithmetic_mean",
+                    "parameters": {"weights": [0.5, 0.5]}
+                }
+            }
+        }
+    ]
+}
+client.transport.perform_request("PUT", "/_search/pipeline/hr-hybrid-pipeline", body=pipeline_body)
+print("Search pipeline 생성 완료")
+
+# 5. Hybrid Search 실행
+query = "휴가 신청 방법"
+query_vector = embeddings.embed_query(query)
+
+search_body = {
+    "size": 3,
+    "query": {
+        "hybrid": {
+            "queries": [
+                {"match": {"content": {"query": query}}},
+                {"knn": {"content_embedding": {"vector": query_vector, "k": 3}}}
+            ]
+        }
+    }
+}
+
+response = client.search(
+    index=index_name,
+    body=search_body,
+    params={"search_pipeline": "hr-hybrid-pipeline"}
+)
+
+print(f"\n질문: {query}\n")
+print("=== OpenSearch Hybrid Search 결과 ===")
+for i, hit in enumerate(response["hits"]["hits"]):
+    print(f"{i+1}. [{hit['_score']:.4f}] {hit['_source']['content']}")
+```
+
+#### FAISS vs OpenSearch 비교 정리
+
+```
+FAISS 방식 (학습용):
+  ✅ 장점: 의존성 적음, 로컬 실행 간단
+  ❌ 단점: BM25 직접 구현, 한국어 토크나이저 직접 구현, 점수 융합 직접 구현
+
+OpenSearch 방식 (프로덕션):
+  ✅ 장점: BM25 + kNN + Nori + search pipeline 모두 내장
+  ✅ 장점: REST API, 클러스터링, 모니터링 내장
+  ❌ 단점: Docker 필요 (리소스 ~512MB)
+
+결론: 개념 학습은 FAISS, 프로덕션은 OpenSearch
 ```
 
 ### 5.5 실습 3: Reranker 적용
@@ -1306,21 +1528,31 @@ for i, (score, doc) in enumerate(results):
 ### 5.6 구현 작업
 
 **구현 노트북**:
-- `notebooks/phase2/step_09_chunking.ipynb`
-- `notebooks/phase2/step_10_hybrid_search.ipynb`
-- `notebooks/phase2/step_11_reranker.ipynb`
+- `notebooks/phase2/impl/step_04_chunking.ipynb`
+- `notebooks/phase2/impl/step_05_hybrid_search.ipynb` (BM25+FAISS 실험)
+- `notebooks/phase2/impl/step_06_opensearch_hybrid.ipynb` ★신규 (OpenSearch 실험/평가 비교)
+- `notebooks/phase2/impl/step_07_reranker.ipynb`
 
 작업 순서:
 1. [ ] 현재 청킹 설정 확인 및 최적화
 2. [ ] 문서 재인덱싱 (FAISS 재생성)
-3. [ ] BM25 + FAISS Hybrid Search 구현
-4. [ ] Reranker 파이프라인 추가
-5. [ ] RAGAS로 효과 측정
+3. [ ] BM25 + FAISS Hybrid Search 실험 (개념 학습)
+4. [ ] **Docker OpenSearch 환경 구성**
+5. [ ] **OpenSearch 인덱싱 + Hybrid Search 실험**
+6. [ ] **RAGAS 평가: FAISS vs BM25+FAISS vs OpenSearch Hybrid 비교**
+7. [ ] **OpenSearch >= FAISS 확인 후 프로덕션 마이그레이션**
+8. [ ] Reranker 파이프라인 추가
+9. [ ] RAGAS로 최종 효과 측정
 
 ### 5.7 검증 체크리스트
 
 - [ ] 청크 크기가 200-300 단어로 조정됨
-- [ ] Hybrid Search가 BM25 + FAISS 결합
+- [ ] BM25 + FAISS Hybrid Search 실험 완료 (개념 이해)
+- [ ] **OpenSearch Docker 환경 구성 완료 (Nori 확인)**
+- [ ] **OpenSearch 인덱스 생성 + 데이터 적재 완료**
+- [ ] **Hybrid Search 쿼리 정상 동작 확인**
+- [ ] **RAGAS 평가: FAISS vs OpenSearch Hybrid 비교 테이블 작성**
+- [ ] **OpenSearch Hybrid >= BM25+FAISS (Avg 0.9292) 확인**
 - [ ] Reranker가 Top-20 → Top-3 재순위
 - [ ] Context Precision 메트릭 향상
 - [ ] RAG 정확도 60% 이상 달성
@@ -1781,7 +2013,10 @@ streamlit run streamlit_streaming.py
 | RAG Best Practices 2025 | https://orkes.io/blog/rag-best-practices/ |
 | kapa.ai RAG Lessons | https://www.kapa.ai/blog/rag-best-practices |
 | Retriever Fine-tuning | https://arxiv.org/abs/2501.04652 |
-| LangChain Hybrid Search | https://python.langchain.com/docs/how_to/hybrid/ |
+| OpenSearch Hybrid Search | https://opensearch.org/docs/latest/search-plugins/hybrid-search/ |
+| OpenSearch Nori 한국어 분석기 | https://opensearch.org/docs/latest/analyzers/language-analyzers/#nori-korean |
+| DB-Engines Vector DBMS Ranking | https://db-engines.com/en/ranking/vector+dbms |
+| OpenSearch Python Client | https://opensearch.org/docs/latest/clients/python-low-level/ |
 
 ### 8.4 추천 튜토리얼
 
@@ -1818,7 +2053,10 @@ streamlit run streamlit_streaming.py
 
 ### Week 3: RAG Agent 고도화 (빠르게 완료) ⭐먼저
 - [ ] Chunking 최적화 (200-300 단어)
-- [ ] Hybrid Search (BM25 + FAISS) 구현
+- [ ] Hybrid Search (BM25 + FAISS) 실험 (개념 학습)
+- [ ] **OpenSearch Docker 환경 구성**
+- [ ] **OpenSearch Hybrid Search 실험 + RAGAS 평가 비교**
+- [ ] **OpenSearch >= FAISS 확인 후 프로덕션 마이그레이션**
 - [ ] Reranker (Cross-encoder) 적용
 - [ ] RAG 정확도 60% 이상 달성
 
@@ -1853,3 +2091,4 @@ streamlit run streamlit_streaming.py
 | 2.0 | 2025-01-15 | 2025 현업 표준 반영: Week 3 SQL 고도화, Week 4 RAG 고도화 추가, 순서 재배치 |
 | 3.0 | 2025-01-16 | PRD v2.0 동기화: Week 순서 변경 (LangSmith→평가→SQL→RAG→보안→UX), Task 10-2/10-3 추가, RAG 순서 수정 (Hybrid→Reranker) |
 | 3.1 | 2025-01-16 | **학습 순서 변경**: Week 3 = RAG (빠르게 완료), Week 4 = SQL (차별화 포인트) - RAG 먼저 학습 후 SQL에 집중 |
+| 3.2 | 2025-02-21 | **OpenSearch 도입**: Week 3에 OpenSearch 학습/실습 추가. FAISS → OpenSearch 네이티브 hybrid query 전환. Nori 한국어 분석기, search pipeline, knn_vector 개념 추가. 실습 2.5 (OpenSearch Hybrid Search) 신규 추가 |

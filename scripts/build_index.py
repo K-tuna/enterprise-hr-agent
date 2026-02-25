@@ -3,9 +3,10 @@
 FAISS 벡터 인덱스 빌드 스크립트
 
 사용법:
-    python scripts/build_index.py                     # 기본 실행
+    python scripts/build_index.py                     # 기본 실행 (HuggingFace snowflake-ko)
     python scripts/build_index.py --test              # 검색 테스트만
     python scripts/build_index.py --source file.pdf   # 특정 파일
+    python scripts/build_index.py --provider huggingface --model dragonkue/snowflake-arctic-embed-l-v2.0-ko
 """
 
 import argparse
@@ -38,15 +39,17 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def load_config():
-    """환경변수에서 설정 로드"""
+def load_config(args=None):
+    """환경변수에서 설정 로드 (CLI 인자 우선)"""
     load_dotenv(PROJECT_ROOT / ".env")
 
+    # CLI 인자 우선, 없으면 환경변수, 없으면 기본값
+    provider = getattr(args, 'provider', None) or os.getenv("EMBEDDING_PROVIDER", "huggingface")
+    model = getattr(args, 'model', None) or os.getenv("EMBEDDING_MODEL", "dragonkue/snowflake-arctic-embed-l-v2.0-ko")
+
     return {
-        "provider": os.getenv("LLM_PROVIDER", "openai"),
-        "embedding_model": os.getenv("OLLAMA_EMBEDDING_MODEL", "qwen3-embedding")
-            if os.getenv("LLM_PROVIDER") == "ollama"
-            else os.getenv("RAG_EMBEDDING_MODEL", "text-embedding-3-small"),
+        "provider": provider,
+        "embedding_model": model,
         "base_url": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
         "docs_path": PROJECT_ROOT / "data" / "company_docs",
         "index_path": PROJECT_ROOT / "data" / "faiss_index",
@@ -158,10 +161,16 @@ def main():
     parser.add_argument("--source", type=str, help="소스 PDF 경로 (기본: data/company_docs/)")
     parser.add_argument("--output", type=str, help="인덱스 저장 경로 (기본: data/faiss_index/)")
     parser.add_argument("--test", action="store_true", help="검색 테스트만 실행")
-    parser.add_argument("--chunk-size", type=int, default=1000, help="청크 크기")
+    parser.add_argument("--chunk-size", type=int, default=1500, help="청크 크기 (기본: 1500)")
+    parser.add_argument("--overlap", type=int, default=300, help="청크 오버랩 (기본: 300)")
+    parser.add_argument("--provider", type=str, default="huggingface",
+                        help="임베딩 provider (openai/ollama/huggingface)")
+    parser.add_argument("--model", type=str,
+                        default="dragonkue/snowflake-arctic-embed-l-v2.0-ko",
+                        help="임베딩 모델명")
     args = parser.parse_args()
 
-    config = load_config()
+    config = load_config(args)
 
     if args.source:
         config["docs_path"] = Path(args.source)
@@ -177,7 +186,7 @@ def main():
 
     # 전체 파이프라인
     documents = load_documents(config["docs_path"])
-    chunks = chunk_documents(documents, chunk_size=args.chunk_size)
+    chunks = chunk_documents(documents, chunk_size=args.chunk_size, overlap=args.overlap)
     vectorstore = build_index(chunks, config)
     save_index(vectorstore, config["index_path"])
 

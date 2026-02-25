@@ -1,0 +1,120 @@
+{
+  "comparison": {
+    "faiss_only": {
+      "context_precision": 0.8427499999725592,
+      "context_recall": 0.95,
+      "avg_score": 0.8963749999862796
+    },
+    "bm25_faiss_ensemble": {
+      "bm25_weight": 0.5,
+      "faiss_weight": 0.5,
+      "context_precision": 0.8717499999727383,
+      "context_recall": 0.98,
+      "avg_score": 0.9258749999863691
+    },
+    "opensearch_hybrid": {
+      "bm25_weight": 0.5,
+      "knn_weight": 0.5,
+      "context_precision": 0.8591666666363793,
+      "context_recall": 0.98,
+      "avg_score": 0.9195833333181896
+    }
+  },
+  "opensearch_grid_search": {
+    "best": {
+      "bm25_weight": 0.6,
+      "knn_weight": 0.4,
+      "context_precision": 0.839194444414597,
+      "context_recall": 0.99,
+      "avg_score": 0.9145972222072984
+    },
+    "all_results": [
+      {
+        "bm25_weight": 0.0,
+        "knn_weight": 1.0,
+        "context_precision": 0.8404999999724515,
+        "context_recall": 0.95,
+        "avg_score": 0.8952499999862258
+      },
+      {
+        "bm25_weight": 0.1,
+        "knn_weight": 0.9,
+        "context_precision": 0.8493333333039361,
+        "context_recall": 0.97,
+        "avg_score": 0.909666666651968
+      },
+      {
+        "bm25_weight": 0.2,
+        "knn_weight": 0.8,
+        "context_precision": 0.8403333333041112,
+        "context_recall": 0.98,
+        "avg_score": 0.9101666666520556
+      },
+      {
+        "bm25_weight": 0.3,
+        "knn_weight": 0.7,
+        "context_precision": 0.8466944444151929,
+        "context_recall": 0.98,
+        "avg_score": 0.9133472222075965
+      },
+      {
+        "bm25_weight": 0.4,
+        "knn_weight": 0.6,
+        "context_precision": 0.8475833333031855,
+        "context_recall": 0.98,
+        "avg_score": 0.9137916666515927
+      },
+      {
+        "bm25_weight": 0.5,
+        "knn_weight": 0.5,
+        "context_precision": 0.8524999999693514,
+        "context_recall": 0.97,
+        "avg_score": 0.9112499999846757
+      },
+      {
+        "bm25_weight": 0.6,
+        "knn_weight": 0.4,
+        "context_precision": 0.839194444414597,
+        "context_recall": 0.99,
+        "avg_score": 0.9145972222072984
+      },
+      {
+        "bm25_weight": 0.7,
+        "knn_weight": 0.3,
+        "context_precision": 0.8234166666392118,
+        "context_recall": 1.0,
+        "avg_score": 0.9117083333196059
+      },
+      {
+        "bm25_weight": 0.8,
+        "knn_weight": 0.2,
+        "context_precision": 0.8191944444171747,
+        "context_recall": 0.98,
+        "avg_score": 0.8995972222085873
+      },
+      {
+        "bm25_weight": 0.9,
+        "knn_weight": 0.1,
+        "context_precision": 0.8264444444169408,
+        "context_recall": 0.99,
+        "avg_score": 0.9082222222084704
+      },
+      {
+        "bm25_weight": 1.0,
+        "knn_weight": 0.0,
+        "context_precision": 0.8203055555313251,
+        "context_recall": 0.97,
+        "avg_score": 0.8951527777656625
+      }
+    ]
+  },
+  "config": {
+    "embedding_model": "dragonkue/snowflake-arctic-embed-l-v2.0-ko",
+    "embedding_dim": 1024,
+    "chunk_size": 1500,
+    "chunk_overlap": 300,
+    "test_samples": 50,
+    "opensearch_version": "3.5.0",
+    "index_name": "hr_documents"
+  }
+}

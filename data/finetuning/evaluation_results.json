@@ -1,0 +1,498 @@
+{
+  "timestamp": "2026-01-15T03:42:29.712317",
+  "config": {
+    "base_model": "qwen3:8b",
+    "finetuned_model": "qwen3-hr",
+    "provider": "ollama"
+  },
+  "sql": {
+    "base": {
+      "model": "qwen3:8b",
+      "metrics": {
+        "execution_accuracy": 100.0,
+        "result_accuracy": 20.0,
+        "execution_success_count": 10,
+        "result_match_count": 2,
+        "total": 10
+      },
+      "results": [
+        {
+          "question": "영업팀에서 가장 높은 급여를 받는 사람은?",
+          "category": "aggregation_join",
+          "expected_sql": "SELECT e.name, s.base_salary FROM employees e JOIN departments d ON e.dept_id = d.dept_id JOIN salaries s ON e.emp_id = s.emp_id WHERE d.name = '영업' ORDER BY s.base_salary DESC LIMIT 1",
+          "generated_sql": "SELECT e.name\nFROM employees e\nJOIN departments d ON e.dept_id = d.dept_id\nJOIN salaries s ON e.emp_id = s.emp_id\nWHERE d.name = '영업'\nORDER BY s.base_salary DESC\nLIMIT 1;",
+          "execution_success": true,
+          "result_match": false,
+          "error": null
+        },
+        {
+          "question": "과장 직급의 평균 급여는 얼마야?",
+          "category": "aggregation_filter",
+          "expected_sql": "SELECT AVG(s.base_salary) as avg_salary FROM employees e JOIN salaries s ON e.emp_id = s.emp_id WHERE e.position = '과장'",
+          "generated_sql": "SELECT AVG(s.base_salary) FROM employees e JOIN salaries s ON e.emp_id = s.emp_id WHERE e.position = '과장';",
+          "execution_success": true,
+          "result_match": false,
+          "error": null
+        },
+        {
+          "question": "2024년 1월 3일에 지각한 직원 명단",
+          "category": "join_filter",
+          "expected_sql": "SELECT e.name FROM employees e JOIN attendance a ON e.emp_id = a.emp_id WHERE a.date = '2024-01-03' AND a.status = 'LATE'",
+          "generated_sql": "SELECT employees.name \nFROM employees \nJOIN attendance ON employees.emp_id = attendance.emp_id \nWHERE attendance.date = '2024-01-03' \nAND attendance.status = 'LATE';",
+          "execution_success": true,
+          "result_match": true,
+          "error": null
+        },
+        {
+          "question": "현재 휴직 중인 직원은 누구야?",
+          "category": "simple_filter",
+          "expected_sql": "SELECT name, position FROM employees WHERE status = 'LEAVE'",
+          "generated_sql": "SELECT name FROM employees WHERE status = 'LEAVE';",
+          "execution_success": true,
+          "result_match": false,
+          "error": null
+        },
+        {
+          "question": "평가 점수가 4.5 이상인 우수 직원 목록",
+          "category": "join_filter_sort",
+          "expected_sql": "SELECT e.name, ev.score FROM employees e JOIN evaluations ev ON e.emp_id = ev.emp_id WHERE ev.score >= 4.5 ORDER BY ev.score DESC",
+          "generated_sql": "SELECT employees.name, evaluations.score\nFROM evaluations\nJOIN employees ON evaluations.emp_id = employees.emp_id\nWHERE evaluations.score >= 4.5;",
+          "execution_success": true,
+          "result_match": true,
+          "error": null
+        },
+        {
+          "question": "보너스 총액이 가장 큰 부서는?",
+          "category": "aggregation_group",
+          "expected_sql": "SELECT d.name, SUM(s.bonus) as total_bonus FROM departments d JOIN employees e ON d.dept_id = e.dept_id JOIN salaries s ON e.emp_id = s.emp_id GROUP BY d.name ORDER BY total_bonus DESC LIMIT 1",
+          "generated_sql": "SELECT departments.name, SUM(salaries.bonus) \nFROM salaries \nJOIN employees ON salaries.emp_id = employees.emp_id \nJOIN departments ON employees.dept_id = departments.dept_id \nGROUP BY departments.dept_id, departments.name \nORDER BY SUM(salaries.bonus) DESC \nLIMIT 1;",
+          "execution_success": true,
+          "result_match": false,
+          "error": null
+        },
+        {
+          "question": "2020년 이후에 입사한 직원은 몇 명이야?",
+          "category": "count_filter",
+          "expected_sql": "SELECT COUNT(*) as count FROM employees WHERE join_date >= '2020-01-01'",
+          "generated_sql": "SELECT COUNT(*) FROM employees WHERE join_date > '2020-01-01';",
+          "execution_success": true,
+          "result_match": false,
+          "error": null
+        },
+        {
+          "question": "인사팀 대리의 급여 정보 알려줘",
+          "category": "multi_filter_join",
+          "expected_sql": "SELECT e.name, s.base_salary, s.bonus FROM employees e JOIN departments d ON e.dept_id = d.dept_id JOIN salaries s ON e.emp_id = s.emp_id WHERE d.name = '인사' AND e.position = '대리'",
+          "generated_sql": "SELECT salaries.base_salary, salaries.bonus, salaries.payment_date\nFROM employees\nJOIN salaries ON employees.emp_id = salaries.emp_id\nWHERE employees.position = '대리' AND employees.dept_id = 3;",
+          "execution_success": true,
+          "result_match": false,
+          "error": null
+        },
+        {
+          "question": "가장 오래 근무한 직원은 누구야?",
+          "category": "sort_limit",
+          "expected_sql": "SELECT name, join_date, position FROM employees WHERE status = 'ACTIVE' ORDER BY join_date ASC LIMIT 1",
+          "generated_sql": "SELECT emp_id, name FROM employees ORDER BY join_date ASC LIMIT 1;",
+          "execution_success": true,
+          "result_match": false,
+          "error": null
+        },
+        {
+          "question": "부서별 평균 평가 점수를 알려줘",
+          "category": "aggregation_group_join",
+          "expected_sql": "SELECT d.name, AVG(ev.score) as avg_score FROM departments d JOIN employees e ON d.dept_id = e.dept_id JOIN evaluations ev ON e.emp_id = ev.emp_id GROUP BY d.name ORDER BY avg_score DESC",
+          "generated_sql": "SELECT departments.name, AVG(evaluations.score) \nFROM evaluations \nJOIN employees ON evaluations.emp_id = employees.emp_id \nJOIN departments ON employees.dept_id = departments.dept_id \nGROUP BY departments.name;",
+          "execution_success": true,
+          "result_match": false,
+          "error": null
+        }
+      ]
+    },
+    "finetuned": {
+      "model": "qwen3-hr",
+      "metrics": {
+        "execution_accuracy": 100.0,
+        "result_accuracy": 60.0,
+        "execution_success_count": 10,
+        "result_match_count": 6,
+        "total": 10
+      },
+      "results": [
+        {
+          "question": "영업팀에서 가장 높은 급여를 받는 사람은?",
+          "category": "aggregation_join",
+          "expected_sql": "SELECT e.name, s.base_salary FROM employees e JOIN departments d ON e.dept_id = d.dept_id JOIN salaries s ON e.emp_id = s.emp_id WHERE d.name = '영업' ORDER BY s.base_salary DESC LIMIT 1",
+          "generated_sql": "SELECT e.name, s.base_salary FROM employees e JOIN departments d ON e.dept_id = d.dept_id JOIN salaries s ON e.emp_id = s.emp_id WHERE d.name = '영업' ORDER BY s.base_salary DESC LIMIT 1;",
+          "execution_success": true,
+          "result_match": true,
+          "error": null
+        },
+        {
+          "question": "과장 직급의 평균 급여는 얼마야?",
+          "category": "aggregation_filter",
+          "expected_sql": "SELECT AVG(s.base_salary) as avg_salary FROM employees e JOIN salaries s ON e.emp_id = s.emp_id WHERE e.position = '과장'",
+          "generated_sql": "SELECT AVG(s.base_salary) as avg_salary FROM salaries s JOIN employees e ON s.emp_id = e.emp_id WHERE e.position = '과장';",
+          "execution_success": true,
+          "result_match": true,
+          "error": null
+        },
+        {
+          "question": "2024년 1월 3일에 지각한 직원 명단",
+          "category": "join_filter",
+          "expected_sql": "SELECT e.name FROM employees e JOIN attendance a ON e.emp_id = a.emp_id WHERE a.date = '2024-01-03' AND a.status = 'LATE'",
+          "generated_sql": "SELECT e.name FROM attendance a JOIN employees e ON a.emp_id = e.emp_id WHERE a.date = '2024-01-03' AND a.status = 'LATE';",
+          "execution_success": true,
+          "result_match": true,
+          "error": null
+        },
+        {
+          "question": "현재 휴직 중인 직원은 누구야?",
+          "category": "simple_filter",
+          "expected_sql": "SELECT name, position FROM employees WHERE status = 'LEAVE'",
+          "generated_sql": "SELECT e.name FROM employees e WHERE e.status = 'LEAVE';",
+          "execution_success": true,
+          "result_match": false,
+          "error": null
+        },
+        {
+          "question": "평가 점수가 4.5 이상인 우수 직원 목록",
+          "category": "join_filter_sort",
+          "expected_sql": "SELECT e.name, ev.score FROM employees e JOIN evaluations ev ON e.emp_id = ev.emp_id WHERE ev.score >= 4.5 ORDER BY ev.score DESC",
+          "generated_sql": "SELECT e.name FROM evaluations ev JOIN employees e ON ev.emp_id = e.emp_id WHERE ev.score >= 4.5;",
+          "execution_success": true,
+          "result_match": false,
+          "error": null
+        },
+        {
+          "question": "보너스 총액이 가장 큰 부서는?",
+          "category": "aggregation_group",
+          "expected_sql": "SELECT d.name, SUM(s.bonus) as total_bonus FROM departments d JOIN employees e ON d.dept_id = e.dept_id JOIN salaries s ON e.emp_id = s.emp_id GROUP BY d.name ORDER BY total_bonus DESC LIMIT 1",
+          "generated_sql": "SELECT d.name, SUM(s.bonus) as total_bonus FROM salaries s JOIN employees e ON s.emp_id = e.emp_id JOIN departments d ON e.dept_id = d.dept_id GROUP BY d.name ORDER BY total_bonus DESC LIMIT 1;",
+          "execution_success": true,
+          "result_match": true,
+          "error": null
+        },
+        {
+          "question": "2020년 이후에 입사한 직원은 몇 명이야?",
+          "category": "count_filter",
+          "expected_sql": "SELECT COUNT(*) as count FROM employees WHERE join_date >= '2020-01-01'",
+          "generated_sql": "SELECT COUNT(*) as count FROM employees WHERE join_date >= '2020-01-01';",
+          "execution_success": true,
+          "result_match": true,
+          "error": null
+        },
+        {
+          "question": "인사팀 대리의 급여 정보 알려줘",
+          "category": "multi_filter_join",
+          "expected_sql": "SELECT e.name, s.base_salary, s.bonus FROM employees e JOIN departments d ON e.dept_id = d.dept_id JOIN salaries s ON e.emp_id = s.emp_id WHERE d.name = '인사' AND e.position = '대리'",
+          "generated_sql": "SELECT s.base_salary, s.bonus, s.payment_date FROM salaries s JOIN employees e ON s.emp_id = e.emp_id JOIN departments d ON e.dept_id = d.dept_id WHERE d.name = '인사' AND e.position = '대리';",
+          "execution_success": true,
+          "result_match": false,
+          "error": null
+        },
+        {
+          "question": "가장 오래 근무한 직원은 누구야?",
+          "category": "sort_limit",
+          "expected_sql": "SELECT name, join_date, position FROM employees WHERE status = 'ACTIVE' ORDER BY join_date ASC LIMIT 1",
+          "generated_sql": "SELECT e.name, COUNT(*) as years FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE e.status = 'ACTIVE' GROUP BY e.name ORDER BY years DESC LIMIT 1;",
+          "execution_success": true,
+          "result_match": false,
+          "error": null
+        },
+        {
+          "question": "부서별 평균 평가 점수를 알려줘",
+          "category": "aggregation_group_join",
+          "expected_sql": "SELECT d.name, AVG(ev.score) as avg_score FROM departments d JOIN employees e ON d.dept_id = e.dept_id JOIN evaluations ev ON e.emp_id = ev.emp_id GROUP BY d.name ORDER BY avg_score DESC",
+          "generated_sql": "SELECT d.name, AVG(e.score) as avg_score FROM evaluations e JOIN employees ee ON e.emp_id = ee.emp_id JOIN departments d ON ee.dept_id = d.dept_id GROUP BY d.name;",
+          "execution_success": true,
+          "result_match": true,
+          "error": null
+        }
+      ]
+    },
+    "statistical_test": {
+      "metric": "SQL Execution",
+      "base_mean": 1.0,
+      "ft_mean": 1.0,
+      "difference": 0.0,
+      "statistic": 0.0,
+      "p_value": 1.0,
+      "is_significant": false,
+      "interpretation": "두 모델 간 차이 없음 (동일 점수)"
+    }
+  },
+  "rag": {
+    "base": {
+      "model": "qwen3:8b",
+      "metrics": {
+        "avg_keyword_match_rate": 0.0,
+        "avg_llm_score": 1.0,
+        "grounded_rate": 0.0,
+        "total": 10
+      },
+      "results": [
+        {
+          "question": "병가는 어떻게 사용하나요?",
+          "category": "policy_lookup",
+          "generated_answer": "",
+          "ground_truth": "병가는 질병 또는 부상으로 인해 근무가 어려운 경우 사용하는 휴가입니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 4,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        },
+        {
+          "question": "육아휴직은 얼마 동안 쓸 수 있어?",
+          "category": "policy_lookup",
+          "generated_answer": "",
+          "ground_truth": "육아휴직은 만 8세 이하 자녀를 양육하기 위해 일정 기간 근무를 중단하는 것입니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 4,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        },
+        {
+          "question": "정직 징계가 뭐야?",
+          "category": "term_definition",
+          "generated_answer": "",
+          "ground_truth": "정직은 일정 기간 출근을 정지하고 급여를 지급하지 않는 징계입니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 4,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        },
+        {
+          "question": "재택근무는 어떻게 하는 거야?",
+          "category": "policy_lookup",
+          "generated_answer": "",
+          "ground_truth": "재택근무는 회사 사무실이 아닌 자택 등에서 정보통신기기를 활용하여 업무를 수행하는 근무 형태입니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 4,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        },
+        {
+          "question": "연장근로 수당은 어떻게 계산해?",
+          "category": "calculation",
+          "generated_answer": "",
+          "ground_truth": "연장근로는 기본근무시간을 초과하여 근무하는 것으로, 통상임금의 50%를 가산하여 수당을 지급합니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 4,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        },
+        {
+          "question": "경조사휴가 종류 알려줘",
+          "category": "policy_lookup",
+          "generated_answer": "",
+          "ground_truth": "경조사휴가는 결혼, 출산, 사망 등 경조사 발생 시 부여되는 휴가입니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 4,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        },
+        {
+          "question": "수습기간이 뭐야?",
+          "category": "term_definition",
+          "generated_answer": "",
+          "ground_truth": "수습(시용) 기간은 정규직 입사 후 정식 임용 전까지의 기간으로, 직무 수행 능력과 조직 적합성을 평가받는 기간입니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 5,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        },
+        {
+          "question": "복지포인트는 어디에 쓸 수 있어?",
+          "category": "benefit_lookup",
+          "generated_answer": "",
+          "ground_truth": "복지포인트는 회사가 직원에게 부여하는 선택적 복리후생 비용으로, 지정된 항목 내에서 자유롭게 사용할 수 있습니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 4,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        },
+        {
+          "question": "안식휴가는 언제 받을 수 있어?",
+          "category": "policy_lookup",
+          "generated_answer": "",
+          "ground_truth": "안식휴가는 장기 근속자에게 재충전 기회를 제공하기 위해 부여하는 장기 유급휴가입니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 4,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        },
+        {
+          "question": "회사 VPN은 뭐야?",
+          "category": "term_definition",
+          "generated_answer": "",
+          "ground_truth": "VPN은 Virtual Private Network의 약자로, 외부에서 사내망에 안전하게 접속하기 위한 가상 사설망입니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 5,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        }
+      ]
+    },
+    "finetuned": {
+      "model": "qwen3-hr",
+      "metrics": {
+        "avg_keyword_match_rate": 0.0,
+        "avg_llm_score": 1.0,
+        "grounded_rate": 0.0,
+        "total": 10
+      },
+      "results": [
+        {
+          "question": "병가는 어떻게 사용하나요?",
+          "category": "policy_lookup",
+          "generated_answer": "",
+          "ground_truth": "병가는 질병 또는 부상으로 인해 근무가 어려운 경우 사용하는 휴가입니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 4,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        },
+        {
+          "question": "육아휴직은 얼마 동안 쓸 수 있어?",
+          "category": "policy_lookup",
+          "generated_answer": "",
+          "ground_truth": "육아휴직은 만 8세 이하 자녀를 양육하기 위해 일정 기간 근무를 중단하는 것입니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 4,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        },
+        {
+          "question": "정직 징계가 뭐야?",
+          "category": "term_definition",
+          "generated_answer": "",
+          "ground_truth": "정직은 일정 기간 출근을 정지하고 급여를 지급하지 않는 징계입니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 4,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        },
+        {
+          "question": "재택근무는 어떻게 하는 거야?",
+          "category": "policy_lookup",
+          "generated_answer": "",
+          "ground_truth": "재택근무는 회사 사무실이 아닌 자택 등에서 정보통신기기를 활용하여 업무를 수행하는 근무 형태입니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 4,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        },
+        {
+          "question": "연장근로 수당은 어떻게 계산해?",
+          "category": "calculation",
+          "generated_answer": "",
+          "ground_truth": "연장근로는 기본근무시간을 초과하여 근무하는 것으로, 통상임금의 50%를 가산하여 수당을 지급합니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 4,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        },
+        {
+          "question": "경조사휴가 종류 알려줘",
+          "category": "policy_lookup",
+          "generated_answer": "",
+          "ground_truth": "경조사휴가는 결혼, 출산, 사망 등 경조사 발생 시 부여되는 휴가입니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 4,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        },
+        {
+          "question": "수습기간이 뭐야?",
+          "category": "term_definition",
+          "generated_answer": "",
+          "ground_truth": "수습(시용) 기간은 정규직 입사 후 정식 임용 전까지의 기간으로, 직무 수행 능력과 조직 적합성을 평가받는 기간입니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 5,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        },
+        {
+          "question": "복지포인트는 어디에 쓸 수 있어?",
+          "category": "benefit_lookup",
+          "generated_answer": "",
+          "ground_truth": "복지포인트는 회사가 직원에게 부여하는 선택적 복리후생 비용으로, 지정된 항목 내에서 자유롭게 사용할 수 있습니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 4,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        },
+        {
+          "question": "안식휴가는 언제 받을 수 있어?",
+          "category": "policy_lookup",
+          "generated_answer": "",
+          "ground_truth": "안식휴가는 장기 근속자에게 재충전 기회를 제공하기 위해 부여하는 장기 유급휴가입니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 4,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        },
+        {
+          "question": "회사 VPN은 뭐야?",
+          "category": "term_definition",
+          "generated_answer": "",
+          "ground_truth": "VPN은 Virtual Private Network의 약자로, 외부에서 사내망에 안전하게 접속하기 위한 가상 사설망입니다.",
+          "keyword_match_count": 0,
+          "keyword_total": 5,
+          "keyword_match_rate": 0.0,
+          "llm_score": 1,
+          "is_grounded": false,
+          "error": null
+        }
+      ]
+    },
+    "statistical_test": {
+      "metric": "RAG LLM Score",
+      "base_mean": 1.0,
+      "ft_mean": 1.0,
+      "difference": 0.0,
+      "statistic": 0.0,
+      "p_value": 1.0,
+      "is_significant": false,
+      "interpretation": "두 모델 간 차이 없음 (동일 점수)"
+    }
+  }
+}

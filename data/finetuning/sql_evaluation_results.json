@@ -1,0 +1,237 @@
+{
+  "timestamp": "2026-01-18T00:40:40.160074",
+  "config": {
+    "base_model": "qwen3:8b",
+    "finetuned_model": "qwen3-hr",
+    "provider": "ollama",
+    "test_cases_count": 10
+  },
+  "base": {
+    "model": "qwen3:8b",
+    "metrics": {
+      "execution_rate": 100.0,
+      "execution_accuracy": 60.0,
+      "execution_success_count": 10,
+      "result_match_count": 6,
+      "total": 10
+    },
+    "results": [
+      {
+        "id": 1,
+        "question": "영업팀에서 가장 높은 급여를 받는 사람은?",
+        "category": "aggregation_join",
+        "expected_sql": "SELECT e.name FROM employees e JOIN departments d ON e.dept_id = d.dept_id JOIN salaries s ON e.emp_id = s.emp_id WHERE d.name = '영업' ORDER BY s.base_salary DESC LIMIT 1",
+        "generated_sql": "SELECT e.name\nFROM employees e\nJOIN departments d ON e.dept_id = d.dept_id\nJOIN salaries s ON e.emp_id = s.emp_id\nWHERE d.name = '영업'\nORDER BY s.base_salary DESC\nLIMIT 1;",
+        "execution_success": true,
+        "result_match": true,
+        "error": null
+      },
+      {
+        "id": 2,
+        "question": "과장 직급의 평균 급여는 얼마야?",
+        "category": "aggregation_filter",
+        "expected_sql": "SELECT AVG(s.base_salary) as avg_salary FROM employees e JOIN salaries s ON e.emp_id = s.emp_id WHERE e.position = '과장'",
+        "generated_sql": "SELECT AVG(s.base_salary) FROM employees e JOIN salaries s ON e.emp_id = s.emp_id WHERE e.position = '과장';",
+        "execution_success": true,
+        "result_match": true,
+        "error": null
+      },
+      {
+        "id": 3,
+        "question": "2024년 1월 3일에 지각한 직원 명단",
+        "category": "join_filter",
+        "expected_sql": "SELECT e.name FROM employees e JOIN attendance a ON e.emp_id = a.emp_id WHERE a.date = '2024-01-03' AND a.status = 'LATE'",
+        "generated_sql": "SELECT employees.name \nFROM employees \nJOIN attendance ON employees.emp_id = attendance.emp_id \nWHERE attendance.date = '2024-01-03' \nAND attendance.status = 'LATE';",
+        "execution_success": true,
+        "result_match": true,
+        "error": null
+      },
+      {
+        "id": 4,
+        "question": "현재 휴직 중인 직원은 누구야?",
+        "category": "simple_filter",
+        "expected_sql": "SELECT name FROM employees WHERE status = 'LEAVE'",
+        "generated_sql": "SELECT name FROM employees WHERE status = 'LEAVE';",
+        "execution_success": true,
+        "result_match": true,
+        "error": null
+      },
+      {
+        "id": 5,
+        "question": "평가 점수가 4.5 이상인 우수 직원 목록",
+        "category": "join_filter_sort",
+        "expected_sql": "SELECT e.name FROM employees e JOIN evaluations ev ON e.emp_id = ev.emp_id WHERE ev.score >= 4.5 ORDER BY ev.score DESC",
+        "generated_sql": "SELECT employees.name, evaluations.score\nFROM employees\nJOIN evaluations ON employees.emp_id = evaluations.emp_id\nWHERE evaluations.score >= 4.5;",
+        "execution_success": true,
+        "result_match": false,
+        "error": null
+      },
+      {
+        "id": 6,
+        "question": "보너스 총액이 가장 큰 부서는?",
+        "category": "aggregation_group",
+        "expected_sql": "SELECT d.name FROM departments d JOIN employees e ON d.dept_id = e.dept_id JOIN salaries s ON e.emp_id = s.emp_id GROUP BY d.name ORDER BY SUM(s.bonus) DESC LIMIT 1",
+        "generated_sql": "SELECT departments.name, SUM(salaries.bonus) AS total_bonus\nFROM salaries\nJOIN employees ON salaries.emp_id = employees.emp_id\nJOIN departments ON employees.dept_id = departments.dept_id\nGROUP BY departments.name\nORDER BY total_bonus DESC\nLIMIT 1;",
+        "execution_success": true,
+        "result_match": false,
+        "error": null
+      },
+      {
+        "id": 7,
+        "question": "2020년 이후에 입사한 직원은 몇 명이야?",
+        "category": "count_filter",
+        "expected_sql": "SELECT COUNT(*) as count FROM employees WHERE join_date >= '2020-01-01'",
+        "generated_sql": "SELECT COUNT(*) FROM employees WHERE join_date > '2020-01-01';",
+        "execution_success": true,
+        "result_match": true,
+        "error": null
+      },
+      {
+        "id": 8,
+        "question": "인사팀 대리의 급여 정보 알려줘",
+        "category": "multi_filter_join",
+        "expected_sql": "SELECT e.name, s.base_salary, s.bonus FROM employees e JOIN departments d ON e.dept_id = d.dept_id JOIN salaries s ON e.emp_id = s.emp_id WHERE d.name = '인사' AND e.position = '대리'",
+        "generated_sql": "SELECT salaries.base_salary, salaries.bonus, salaries.payment_date \nFROM employees \nJOIN salaries ON employees.emp_id = salaries.emp_id \nWHERE employees.dept_id = 3 AND employees.position = '대리';",
+        "execution_success": true,
+        "result_match": false,
+        "error": null
+      },
+      {
+        "id": 9,
+        "question": "가장 오래 근무한 직원은 누구야?",
+        "category": "sort_limit",
+        "expected_sql": "SELECT name FROM employees WHERE status = 'ACTIVE' ORDER BY join_date ASC LIMIT 1",
+        "generated_sql": "SELECT * FROM employees ORDER BY join_date ASC LIMIT 1;",
+        "execution_success": true,
+        "result_match": false,
+        "error": null
+      },
+      {
+        "id": 10,
+        "question": "부서별 평균 평가 점수를 알려줘",
+        "category": "aggregation_group_join",
+        "expected_sql": "SELECT d.name, AVG(ev.score) as avg_score FROM departments d JOIN employees e ON d.dept_id = e.dept_id JOIN evaluations ev ON e.emp_id = ev.emp_id GROUP BY d.name ORDER BY avg_score DESC",
+        "generated_sql": "SELECT departments.name, AVG(evaluations.score) \nFROM evaluations \nJOIN employees ON evaluations.emp_id = employees.emp_id \nJOIN departments ON employees.dept_id = departments.dept_id \nGROUP BY departments.name;",
+        "execution_success": true,
+        "result_match": true,
+        "error": null
+      }
+    ]
+  },
+  "finetuned": {
+    "model": "qwen3-hr",
+    "metrics": {
+      "execution_rate": 100.0,
+      "execution_accuracy": 60.0,
+      "execution_success_count": 10,
+      "result_match_count": 6,
+      "total": 10
+    },
+    "results": [
+      {
+        "id": 1,
+        "question": "영업팀에서 가장 높은 급여를 받는 사람은?",
+        "category": "aggregation_join",
+        "expected_sql": "SELECT e.name FROM employees e JOIN departments d ON e.dept_id = d.dept_id JOIN salaries s ON e.emp_id = s.emp_id WHERE d.name = '영업' ORDER BY s.base_salary DESC LIMIT 1",
+        "generated_sql": "SELECT e.name, s.base_salary FROM employees e JOIN departments d ON e.dept_id = d.dept_id JOIN salaries s ON e.emp_id = s.emp_id WHERE d.name = '영업' ORDER BY s.base_salary DESC LIMIT 1;",
+        "execution_success": true,
+        "result_match": false,
+        "error": null
+      },
+      {
+        "id": 2,
+        "question": "과장 직급의 평균 급여는 얼마야?",
+        "category": "aggregation_filter",
+        "expected_sql": "SELECT AVG(s.base_salary) as avg_salary FROM employees e JOIN salaries s ON e.emp_id = s.emp_id WHERE e.position = '과장'",
+        "generated_sql": "SELECT AVG(s.base_salary) as avg_salary FROM salaries s JOIN employees e ON s.emp_id = e.emp_id WHERE e.position = '과장';",
+        "execution_success": true,
+        "result_match": true,
+        "error": null
+      },
+      {
+        "id": 3,
+        "question": "2024년 1월 3일에 지각한 직원 명단",
+        "category": "join_filter",
+        "expected_sql": "SELECT e.name FROM employees e JOIN attendance a ON e.emp_id = a.emp_id WHERE a.date = '2024-01-03' AND a.status = 'LATE'",
+        "generated_sql": "SELECT e.name FROM attendance a JOIN employees e ON a.emp_id = e.emp_id WHERE a.date = '2024-01-03' AND a.status = 'LATE';",
+        "execution_success": true,
+        "result_match": true,
+        "error": null
+      },
+      {
+        "id": 4,
+        "question": "현재 휴직 중인 직원은 누구야?",
+        "category": "simple_filter",
+        "expected_sql": "SELECT name FROM employees WHERE status = 'LEAVE'",
+        "generated_sql": "SELECT e.name FROM employees e WHERE e.status = 'LEAVE';",
+        "execution_success": true,
+        "result_match": true,
+        "error": null
+      },
+      {
+        "id": 5,
+        "question": "평가 점수가 4.5 이상인 우수 직원 목록",
+        "category": "join_filter_sort",
+        "expected_sql": "SELECT e.name FROM employees e JOIN evaluations ev ON e.emp_id = ev.emp_id WHERE ev.score >= 4.5 ORDER BY ev.score DESC",
+        "generated_sql": "SELECT e.name FROM evaluations ev JOIN employees e ON ev.emp_id = e.emp_id WHERE ev.score >= 4.5;",
+        "execution_success": true,
+        "result_match": true,
+        "error": null
+      },
+      {
+        "id": 6,
+        "question": "보너스 총액이 가장 큰 부서는?",
+        "category": "aggregation_group",
+        "expected_sql": "SELECT d.name FROM departments d JOIN employees e ON d.dept_id = e.dept_id JOIN salaries s ON e.emp_id = s.emp_id GROUP BY d.name ORDER BY SUM(s.bonus) DESC LIMIT 1",
+        "generated_sql": "SELECT d.name, SUM(s.bonus) as total_bonus FROM salaries s JOIN employees e ON s.emp_id = e.emp_id JOIN departments d ON e.dept_id = d.dept_id GROUP BY d.name ORDER BY total_bonus DESC LIMIT 1;",
+        "execution_success": true,
+        "result_match": false,
+        "error": null
+      },
+      {
+        "id": 7,
+        "question": "2020년 이후에 입사한 직원은 몇 명이야?",
+        "category": "count_filter",
+        "expected_sql": "SELECT COUNT(*) as count FROM employees WHERE join_date >= '2020-01-01'",
+        "generated_sql": "SELECT COUNT(*) as count FROM employees WHERE join_date >= '2020-01-01';",
+        "execution_success": true,
+        "result_match": true,
+        "error": null
+      },
+      {
+        "id": 8,
+        "question": "인사팀 대리의 급여 정보 알려줘",
+        "category": "multi_filter_join",
+        "expected_sql": "SELECT e.name, s.base_salary, s.bonus FROM employees e JOIN departments d ON e.dept_id = d.dept_id JOIN salaries s ON e.emp_id = s.emp_id WHERE d.name = '인사' AND e.position = '대리'",
+        "generated_sql": "SELECT s.base_salary, s.bonus, s.payment_date FROM salaries s JOIN employees e ON s.emp_id = e.emp_id JOIN departments d ON e.dept_id = d.dept_id WHERE d.name = '인사' AND e.position = '대리';",
+        "execution_success": true,
+        "result_match": false,
+        "error": null
+      },
+      {
+        "id": 9,
+        "question": "가장 오래 근무한 직원은 누구야?",
+        "category": "sort_limit",
+        "expected_sql": "SELECT name FROM employees WHERE status = 'ACTIVE' ORDER BY join_date ASC LIMIT 1",
+        "generated_sql": "SELECT e.name, COUNT(*) as years FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE e.status = 'ACTIVE' GROUP BY e.name ORDER BY years DESC LIMIT 1;",
+        "execution_success": true,
+        "result_match": false,
+        "error": null
+      },
+      {
+        "id": 10,
+        "question": "부서별 평균 평가 점수를 알려줘",
+        "category": "aggregation_group_join",
+        "expected_sql": "SELECT d.name, AVG(ev.score) as avg_score FROM departments d JOIN employees e ON d.dept_id = e.dept_id JOIN evaluations ev ON e.emp_id = ev.emp_id GROUP BY d.name ORDER BY avg_score DESC",
+        "generated_sql": "SELECT d.name, AVG(e.score) as avg_score FROM evaluations e JOIN employees ee ON e.emp_id = ee.emp_id JOIN departments d ON ee.dept_id = d.dept_id GROUP BY d.name;",
+        "execution_success": true,
+        "result_match": true,
+        "error": null
+      }
+    ]
+  },
+  "comparison": {
+    "execution_rate_improvement": 0.0,
+    "execution_accuracy_improvement": 0.0
+  }
+}

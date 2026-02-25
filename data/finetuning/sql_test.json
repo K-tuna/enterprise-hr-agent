@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "question": "영업팀에서 가장 높은 급여를 받는 사람은?",
+    "expected_sql": "SELECT e.name FROM employees e JOIN departments d ON e.dept_id = d.dept_id JOIN salaries s ON e.emp_id = s.emp_id WHERE d.name = '영업' ORDER BY s.base_salary DESC LIMIT 1",
+    "category": "aggregation_join"
+  },
+  {
+    "id": 2,
+    "question": "과장 직급의 평균 급여는 얼마야?",
+    "expected_sql": "SELECT AVG(s.base_salary) as avg_salary FROM employees e JOIN salaries s ON e.emp_id = s.emp_id WHERE e.position = '과장'",
+    "category": "aggregation_filter"
+  },
+  {
+    "id": 3,
+    "question": "2024년 1월 3일에 지각한 직원 명단",
+    "expected_sql": "SELECT e.name FROM employees e JOIN attendance a ON e.emp_id = a.emp_id WHERE a.date = '2024-01-03' AND a.status = 'LATE'",
+    "category": "join_filter"
+  },
+  {
+    "id": 4,
+    "question": "현재 휴직 중인 직원은 누구야?",
+    "expected_sql": "SELECT name FROM employees WHERE status = 'LEAVE'",
+    "category": "simple_filter"
+  },
+  {
+    "id": 5,
+    "question": "평가 점수가 4.5 이상인 우수 직원 목록",
+    "expected_sql": "SELECT e.name FROM employees e JOIN evaluations ev ON e.emp_id = ev.emp_id WHERE ev.score >= 4.5 ORDER BY ev.score DESC",
+    "category": "join_filter_sort"
+  },
+  {
+    "id": 6,
+    "question": "보너스 총액이 가장 큰 부서는?",
+    "expected_sql": "SELECT d.name FROM departments d JOIN employees e ON d.dept_id = e.dept_id JOIN salaries s ON e.emp_id = s.emp_id GROUP BY d.name ORDER BY SUM(s.bonus) DESC LIMIT 1",
+    "category": "aggregation_group"
+  },
+  {
+    "id": 7,
+    "question": "2020년 이후에 입사한 직원은 몇 명이야?",
+    "expected_sql": "SELECT COUNT(*) as count FROM employees WHERE join_date >= '2020-01-01'",
+    "category": "count_filter"
+  },
+  {
+    "id": 8,
+    "question": "인사팀 대리의 급여 정보 알려줘",
+    "expected_sql": "SELECT e.name, s.base_salary, s.bonus FROM employees e JOIN departments d ON e.dept_id = d.dept_id JOIN salaries s ON e.emp_id = s.emp_id WHERE d.name = '인사' AND e.position = '대리'",
+    "category": "multi_filter_join"
+  },
+  {
+    "id": 9,
+    "question": "가장 오래 근무한 직원은 누구야?",
+    "expected_sql": "SELECT name FROM employees WHERE status = 'ACTIVE' ORDER BY join_date ASC LIMIT 1",
+    "category": "sort_limit"
+  },
+  {
+    "id": 10,
+    "question": "부서별 평균 평가 점수를 알려줘",
+    "expected_sql": "SELECT d.name, AVG(ev.score) as avg_score FROM departments d JOIN employees e ON d.dept_id = e.dept_id JOIN evaluations ev ON e.emp_id = ev.emp_id GROUP BY d.name ORDER BY avg_score DESC",
+    "category": "aggregation_group_join"
+  }
+]

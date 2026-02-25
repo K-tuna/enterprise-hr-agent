@@ -1,0 +1,72 @@
+[
+  {
+    "id": 1,
+    "question": "병가는 어떻게 사용하나요?",
+    "expected_keywords": ["병가", "질병", "부상", "진단서"],
+    "ground_truth": "병가는 질병 또는 부상으로 인해 근무가 어려운 경우 사용하는 휴가입니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 2,
+    "question": "육아휴직은 얼마 동안 쓸 수 있어?",
+    "expected_keywords": ["육아휴직", "8세", "자녀", "양육"],
+    "ground_truth": "육아휴직은 만 8세 이하 자녀를 양육하기 위해 일정 기간 근무를 중단하는 것입니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 3,
+    "question": "정직 징계가 뭐야?",
+    "expected_keywords": ["정직", "출근", "정지", "급여"],
+    "ground_truth": "정직은 일정 기간 출근을 정지하고 급여를 지급하지 않는 징계입니다.",
+    "category": "term_definition"
+  },
+  {
+    "id": 4,
+    "question": "재택근무는 어떻게 하는 거야?",
+    "expected_keywords": ["재택근무", "자택", "정보통신기기", "업무"],
+    "ground_truth": "재택근무는 회사 사무실이 아닌 자택 등에서 정보통신기기를 활용하여 업무를 수행하는 근무 형태입니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 5,
+    "question": "연장근로 수당은 어떻게 계산해?",
+    "expected_keywords": ["연장근로", "통상임금", "50%", "가산"],
+    "ground_truth": "연장근로는 기본근무시간을 초과하여 근무하는 것으로, 통상임금의 50%를 가산하여 수당을 지급합니다.",
+    "category": "calculation"
+  },
+  {
+    "id": 6,
+    "question": "경조사휴가 종류 알려줘",
+    "expected_keywords": ["경조사", "결혼", "출산", "사망"],
+    "ground_truth": "경조사휴가는 결혼, 출산, 사망 등 경조사 발생 시 부여되는 휴가입니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 7,
+    "question": "수습기간이 뭐야?",
+    "expected_keywords": ["수습", "시용", "정규직", "적합성", "평가"],
+    "ground_truth": "수습(시용) 기간은 정규직 입사 후 정식 임용 전까지의 기간으로, 직무 수행 능력과 조직 적합성을 평가받는 기간입니다.",
+    "category": "term_definition"
+  },
+  {
+    "id": 8,
+    "question": "복지포인트는 어디에 쓸 수 있어?",
+    "expected_keywords": ["복지포인트", "선택적", "복리후생", "자유롭게"],
+    "ground_truth": "복지포인트는 회사가 직원에게 부여하는 선택적 복리후생 비용으로, 지정된 항목 내에서 자유롭게 사용할 수 있습니다.",
+    "category": "benefit_lookup"
+  },
+  {
+    "id": 9,
+    "question": "안식휴가는 언제 받을 수 있어?",
+    "expected_keywords": ["안식휴가", "장기", "근속", "재충전"],
+    "ground_truth": "안식휴가는 장기 근속자에게 재충전 기회를 제공하기 위해 부여하는 장기 유급휴가입니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 10,
+    "question": "회사 VPN은 뭐야?",
+    "expected_keywords": ["VPN", "가상", "사설망", "외부", "사내망"],
+    "ground_truth": "VPN은 Virtual Private Network의 약자로, 외부에서 사내망에 안전하게 접속하기 위한 가상 사설망입니다.",
+    "category": "term_definition"
+  }
+]

@@ -1,9 +1,9 @@
 # Phase 2: 평가/모니터링/보안/고도화 PRD
 
 > **Product Requirements Document**
-> 버전: 2.1
+> 버전: 2.2
 > 작성일: 2025-01-16
-> 상태: Draft (2025 현업 표준 반영)
+> 상태: Draft (2025 현업 표준 반영, OpenSearch 하이브리드 서치)
 
 ---
 
@@ -55,7 +55,7 @@ Fine-tuned 모델 (qwen3-hr) → 평가 → 점수 B
 | 파인튜닝 검증 | Base vs Fine-tuned 비교 | 성능 향상률 측정 |
 | 관찰성 확보 | 모든 LLM 호출 트레이싱 | LangSmith 연동 완료 |
 | 보안 강화 | PII 마스킹, 위험 쿼리 차단 | 마스킹 100%, 차단 100% |
-| 검색 개선 | Hybrid Search + Re-ranking | Context Precision +10% |
+| 검색 개선 | OpenSearch Hybrid Search + Re-ranking | Context Precision +10% |
 | UX 향상 | 실시간 응답, 대화 맥락 유지 | 첫 토큰 ≤ 1초 |
 
 ---
@@ -72,7 +72,7 @@ Fine-tuned 모델 (qwen3-hr) → 평가 → 점수 B
 | 보안 | 5 | SQL Query Validation | Medium | 신규 |
 | RAG 고도화 | 7 | Chunking 최적화 | High | 신규 (2025 표준) |
 | RAG 고도화 | 8 | Reranker | High | 신규 (2025 표준) |
-| RAG 고도화 | 9 | Hybrid Search (BM25 + FAISS) | High | 신규 (2025 표준) |
+| RAG 고도화 | 9 | Hybrid Search (OpenSearch) | High | 신규 (2025 표준) |
 | SQL 고도화 | 10 | Dynamic Few-shot | High | 신규 (2025 표준) |
 | SQL 고도화 | 11 | Schema Enhancement | High | 신규 (2025 표준) |
 | SQL 고도화 | 12 | SQLCoder 전용 모델 | High | 신규 (2025 표준) |
@@ -271,29 +271,80 @@ scores = reranker.predict(pairs)
 reranked = sorted(zip(docs, scores), key=lambda x: x[1], reverse=True)[:3]
 ```
 
-#### FR-4.3: Hybrid Search (Task 9)
+#### FR-4.3: Hybrid Search (Task 9) - OpenSearch 네이티브
 
-**현업 표준**: BM25 (키워드) + FAISS (시맨틱) 결합
-> — [LangChain Hybrid Search](https://python.langchain.com/docs/how_to/hybrid/)
+**현업 표준**: OpenSearch 네이티브 hybrid query (BM25 + kNN)
+> OpenSearch는 DB-Engines 벡터 DBMS 랭킹 2위 (점수 20.04)로, 네이티브 하이브리드 서치를 지원
+> — [OpenSearch Hybrid Search](https://opensearch.org/docs/latest/search-plugins/hybrid-search/)
+
+**기존 접근 (BM25+FAISS EnsembleRetriever) 대비 장점:**
+| 항목 | BM25+FAISS (기존) | OpenSearch (신규) |
+|------|-------------------|-------------------|
+| BM25 | rank_bm25 직접 구현 | 내장 (Nori 한국어 분석기) |
+| 점수 융합 | 수동 RRF/가중치 구현 | search pipeline 내장 |
+| 메타데이터 필터링 | 수동 구현 | 쿼리 DSL 내장 |
+| 인덱스 관리 | FAISS 파일 직접 관리 | REST API + 자동 관리 |
+| 프로덕션 운영 | 제한적 | 클러스터링, 모니터링 내장 |
+
+**현재 지표 (step_05 노트북 기준):**
+| Retriever | Precision | Recall | Average |
+|-----------|-----------|--------|---------|
+| FAISS only | 0.8348 | 0.9500 | 0.8924 |
+| BM25+FAISS (50/50) | 0.8785 | 0.9800 | 0.9292 |
+| OpenSearch Hybrid | TBD | TBD | TBD |
 
 | ID | 요구사항 | 수용 기준 |
 |----|----------|----------|
-| FR-4.3.1 | BM25 검색 구현 | `rank_bm25` 라이브러리 활용 |
-| FR-4.3.2 | EnsembleRetriever 적용 | BM25 + FAISS 결합 |
-| FR-4.3.3 | 가중치 설정 | BM25: 0.3, FAISS: 0.7 (기본값) |
-| FR-4.3.4 | 가중치 설정 파일화 | config에서 조절 가능 |
-| FR-4.3.5 | RAGAS로 효과 측정 | Context Precision 향상 확인 |
+| FR-4.3.1 | OpenSearch Docker 환경 구성 | `opensearchproject/opensearch:2.18.0` + Nori 한국어 분석기 |
+| FR-4.3.2 | OpenSearch 인덱스 생성 | `hr_documents` 인덱스 (Nori analyzer + knn_vector 1024d) |
+| FR-4.3.3 | Search Pipeline 구성 | `normalization-processor`로 BM25/kNN 점수 정규화 |
+| FR-4.3.4 | Hybrid Query 구현 | BM25 match + kNN 동시 실행, 가중치 조절 가능 |
+| FR-4.3.5 | RAGAS 평가 비교 | FAISS vs OpenSearch Hybrid 지표 비교 (Jupyter 노트북) |
+| FR-4.3.6 | 프로덕션 마이그레이션 | 평가 결과 확인 후 RAG Agent retriever 교체 |
 
-**구현 예시:**
-```python
-from langchain.retrievers import EnsembleRetriever
-from langchain_community.retrievers import BM25Retriever
+**OpenSearch 인덱스 매핑:**
+```json
+{
+  "mappings": {
+    "properties": {
+      "content": {
+        "type": "text",
+        "analyzer": "nori_analyzer"
+      },
+      "content_embedding": {
+        "type": "knn_vector",
+        "dimension": 1024,
+        "method": {
+          "name": "hnsw",
+          "space_type": "cosinesimil",
+          "engine": "lucene"
+        }
+      },
+      "metadata": {
+        "properties": {
+          "source": { "type": "keyword" },
+          "page": { "type": "integer" },
+          "chunk_id": { "type": "keyword" }
+        }
+      }
+    }
+  }
+}
+```
 
-bm25 = BM25Retriever.from_documents(docs)
-ensemble = EnsembleRetriever(
-    retrievers=[bm25, faiss_retriever],
-    weights=[0.3, 0.7]
-)
+**Hybrid Query 예시:**
+```json
+{
+  "query": {
+    "hybrid": {
+      "queries": [
+        { "match": { "content": { "query": "연차 신청 방법" } } },
+        { "knn": { "content_embedding": { "vector": [...], "k": 10 } } }
+      ]
+    }
+  },
+  "search_pipeline": "hr-hybrid-pipeline"
+}
 ```
 
 ---
@@ -479,7 +530,11 @@ Given the database schema, here is the SQL query that answers [QUESTION]{user_qu
 [Phase C] RAG Agent 고도화 (SOTA 파이프라인 순서) - 빠르게 완료
 [Step 4] Task 7: Chunking 최적화 (+10~20%)
          ↓
-[Step 5] Task 9: Hybrid Search (후보 수집, recall)
+[Step 5] Task 9: Hybrid Search - BM25+FAISS 실험 (recall)
+         ↓
+[Step 5.5] Task 9: OpenSearch Hybrid 실험/평가 비교 (Jupyter)
+         ↓ (OpenSearch >= FAISS 확인 후)
+[Step 5.6] Task 9: OpenSearch 프로덕션 마이그레이션
          ↓
 [Step 6] Task 8: Reranker (최종 정렬, precision, +42%)
          ↓
@@ -524,8 +579,9 @@ notebooks/phase2/
 | 2 | Task 2 | study_02_sql_evaluation | step_02_sql_evaluation | SQL 평가 (Execution Accuracy) |
 | 3 | Task 1 | study_03_rag_evaluation | step_03_rag_evaluation | RAGAS 평가 |
 | 4 | Task 7 | study_04_chunking | step_04_chunking | 청킹 최적화 |
-| 5 | Task 9 | study_05_hybrid_search | step_05_hybrid_search | Hybrid Search |
-| 6 | Task 8 | study_06_reranker | step_06_reranker | Reranker |
+| 5 | Task 9 | study_05_hybrid_search | step_05_hybrid_search | Hybrid Search (BM25+FAISS) |
+| 5.5 | Task 9 | - | step_06_opensearch_hybrid | OpenSearch Hybrid 실험/평가 비교 |
+| 6 | Task 8 | study_06_reranker | step_07_reranker | Reranker |
 | 7 | Task 11 | study_07_schema_enhancement | step_07_schema_enhancement | 스키마 설명 추가 |
 | 8 | Task 10 | study_08_fewshot_embedding | step_08_fewshot_embedding | Few-shot 임베딩 검색 |
 | 9 | Task 10-2 | study_09_masked_fewshot | step_09_masked_fewshot | 마스크 질문 임베딩 |
@@ -585,7 +641,8 @@ notebooks/phase2/
 | 라이브러리 | 버전 | 용도 | 표준 여부 |
 |------------|------|------|----------|
 | ragas | 0.2.x | RAG 평가 | ✅ 현업 표준 |
-| rank-bm25 | 0.2.x | BM25 검색 | ✅ 현업 표준 |
+| opensearch-py | 2.4.x | OpenSearch 클라이언트 | ✅ 현업 표준 (DB-Engines 2위) |
+| rank-bm25 | 0.2.x | BM25 검색 (FAISS 실험용) | ✅ 현업 표준 |
 | sentence-transformers | 3.x | Re-ranking | ✅ 현업 표준 |
 | sqlparse | 0.5.x | SQL 검증 | ✅ 현업 표준 |
 | langsmith | 0.1.x | 트레이싱 | ✅ 현업 표준 |
@@ -601,10 +658,91 @@ LANGCHAIN_PROJECT=enterprise-hr-agent
 # Guardrails
 GUARDRAILS_ENABLED=true
 
-# Hybrid Search
+# OpenSearch (Hybrid Search)
+OPENSEARCH_URL=http://localhost:9200
+RAG_RETRIEVER_TYPE=faiss  # faiss (기본값) 또는 opensearch
+
+# Hybrid Search (FAISS 실험용, OpenSearch 마이그레이션 후 불필요)
 BM25_WEIGHT=0.5
 FAISS_WEIGHT=0.5
 ```
+
+### 7.3 최적 모델 구성 (8GB VRAM)
+
+#### 아키텍처 개요
+
+```
+┌─────────────────────────────────────┐
+│ 항상 로드 (상주)                     │
+├─────────────────────────────────────┤
+│ Qwen3-8B (4bit)     ~5GB           │ ← LLM 베이스
+│ DeBERTa-v3-base     ~350MB         │ ← Router (분류)
+│ BGE-small-ko        ~100MB         │ ← Embedding
+├─────────────────────────────────────┤
+│ 총합: ~5.5GB (여유 2.5GB)           │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│ LoRA 어댑터 스왑 (~45ms)            │
+├─────────────────────────────────────┤
+│ sql_adapter.safetensors   ~15MB    │
+│ rag_adapter.safetensors   ~15MB    │
+└─────────────────────────────────────┘
+```
+
+#### 모델 선정 근거
+
+| 컴포넌트 | 모델 | 선정 이유 |
+|----------|------|----------|
+| **LLM 베이스** | Qwen3-8B (4bit) | Qwen3-8B ≈ Qwen2.5-14B 성능, 8GB 한계 내 최대 크기 |
+| **Router** | DeBERTa-v3-base | 분류 정확도 90%+, LLM(80-85%)보다 우수 |
+| **Embedding** | BGE-small-ko | 한국어 특화, 100MB로 경량 |
+| **어댑터 방식** | LoRA (4bit QLoRA) | 스왑 45ms, 정확도 95-100% 유지 |
+
+#### 워크플로우
+
+```
+질문 → DeBERTa (분류) → SQL/RAG 판단
+                          ↓
+         SQL → sql_adapter 로드 → Qwen3-8B 실행
+         RAG → BGE 검색 → rag_adapter 로드 → Qwen3-8B 실행
+```
+
+#### 대안 비교 (기각된 옵션)
+
+| 옵션 | 구성 | 기각 이유 |
+|------|------|----------|
+| 모델 스왑 | SQLCoder-7B ↔ Qwen-7B | 스왑 10-30초, 사용자 경험 저하 |
+| 더 큰 모델 | Qwen3-14B | 8GB 초과 (~8GB 단독) |
+| 2bit 양자화 | Qwen3-14B 2bit | 정확도 70-80%로 급락 |
+
+#### VRAM 상세 분석
+
+| 항목 | 크기 | 비고 |
+|------|------|------|
+| Qwen3-8B (4bit) | ~5GB | 베이스 모델 |
+| DeBERTa-v3-base | ~350MB | Router |
+| BGE-small-ko | ~100MB | Embedding |
+| KV Cache | ~500MB-1GB | 추론 중 동적 할당 |
+| 어댑터 | ~30MB | SQL + RAG |
+| **총합** | **~6-7GB** | 8GB 내 안정 운영 |
+
+#### 벤치마크 기반 예상 성능
+
+| 태스크 | 예상 정확도 | 출처 |
+|--------|------------|------|
+| SQL (Qwen3-8B + LoRA) | ~68% | 일반 8B + LoRA 추정 |
+| Router (DeBERTa) | 90%+ | GLUE 벤치마크 |
+| RAG (Qwen3-8B) | 좋음 | 8B 베이스 이점 |
+
+#### 현업 표준 대비
+
+| 항목 | 현업 표준 | 본 구성 | 차이 |
+|------|----------|--------|------|
+| LLM 크기 | 70B+ | 8B | 성능 ↓, 비용 ↓↓ |
+| Router | DeBERTa | DeBERTa | 동일 |
+| 어댑터 스왑 | ~45ms | ~45ms | 동일 |
+| Embedding | Cohere API | BGE-small-ko | 약간 ↓, 로컬 운영 |
 
 ---
 
@@ -629,7 +767,9 @@ FAISS_WEIGHT=0.5
 - [RAG Best Practices 2025 - Orkes](https://orkes.io/blog/rag-best-practices/)
 - [kapa.ai RAG Lessons](https://www.kapa.ai/blog/rag-best-practices)
 - [Retriever Fine-tuning (2025)](https://arxiv.org/abs/2501.04652)
-- [LangChain Hybrid Search](https://python.langchain.com/docs/how_to/hybrid/)
+- [OpenSearch Hybrid Search](https://opensearch.org/docs/latest/search-plugins/hybrid-search/)
+- [OpenSearch Nori 한국어 분석기](https://opensearch.org/docs/latest/analyzers/language-analyzers/#nori-korean)
+- [DB-Engines Vector DBMS Ranking](https://db-engines.com/en/ranking/vector+dbms)
 
 ### 기타
 - [LangSmith 가이드](https://docs.smith.langchain.com/)
@@ -654,3 +794,4 @@ FAISS_WEIGHT=0.5
 | 1.1 | 2025-01-12 | 현업 표준 반영 (RAGAS, Execution Accuracy), 파인튜닝 관계 명시, Task 2 버그 수정으로 변경 |
 | 2.0 | 2025-01-15 | **2025 현업 표준 적용**: Epic 6 (SQL 고도화) 추가, Epic 4 (RAG 고도화) 순서 변경, 학습 노트북 매핑 추가 |
 | 2.1 | 2025-01-16 | **실행 순서 변경**: RAG 먼저 (Phase C), SQL 나중 (Phase D) - RAG는 빠르게 완료, SQL은 차별화 포인트 |
+| 2.2 | 2025-02-21 | **OpenSearch 마이그레이션**: FR-4.3을 BM25+FAISS EnsembleRetriever → OpenSearch 네이티브 hybrid query로 변경. Jupyter 노트북 실험(Phase A) → 평가 비교 → 프로덕션 마이그레이션(Phase B) 단계적 접근. opensearch-py, OPENSEARCH_URL, RAG_RETRIEVER_TYPE 추가. step_06_opensearch_hybrid 노트북 추가 |

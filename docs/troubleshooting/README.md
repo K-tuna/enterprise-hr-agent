@@ -55,6 +55,11 @@
 - 해결: `python scripts/build_index.py`로 Ollama 임베딩 기반 인덱스 재생성
 - 파일: `data/faiss_index/`, `scripts/build_index.py`
 
+## 012-google-embeddings-api-key
+- 원인: langchain-google-genai가 환경변수 자동 로드 안 함
+- 해결: `GoogleGenerativeAIEmbeddings`에 `google_api_key` 파라미터 명시적 전달
+- 파일: `core/llm/factory.py`
+
 ---
 
 ## 배운 점
@@ -79,3 +84,4 @@
 ### LLM Provider 전환
 1. **임베딩 모델 변경 시 FAISS 인덱스 재생성 필수** - 차원 불일치로 검색 실패 (011)
 2. OpenAI(1536차원) vs Ollama snowflake-arctic-embed2(1024차원) 호환 안 됨
+3. **langchain-google-genai는 환경변수 자동 로드 안 함** - `google_api_key` 명시적 전달 필요 (012)

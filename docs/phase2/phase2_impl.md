@@ -1,10 +1,10 @@
 # Phase 2: 구현 상세 가이드
 
 > **Implementation Guide**
-> 버전: 2.1
+> 버전: 2.2
 > 작성일: 2025-01-16
 > 대상: 초보 개발자 (학습 병행)
-> 참조: docs/phase2/phase2_prd.md (v2.1 - RAG 먼저, SQL 나중)
+> 참조: docs/phase2/phase2_prd.md (v2.2 - OpenSearch 하이브리드 서치)
 
 ---
 
@@ -14,10 +14,11 @@
 Phase 2 PRD에 정의된 Task를 **2025 현업 표준 패턴**으로 구현하기 위한 상세 가이드입니다.
 각 Step은 **학습 → 구현 → 검증** 사이클로 구성되어 있습니다.
 
-> **2025 현업 표준 업데이트 (v2.1)**
+> **2025 현업 표준 업데이트 (v2.2)**
 > - 모니터링(LangSmith)이 최우선
-> - **RAG Agent 먼저** (빠르게 완료): Chunking → Hybrid → Reranker 순서
+> - **RAG Agent 먼저** (빠르게 완료): Chunking → Hybrid(FAISS) → **OpenSearch 실험/평가** → 마이그레이션 → Reranker 순서
 > - **SQL Agent 나중** (차별화 포인트): Schema → Few-shot → Masked → CoT → SQLCoder 순서
+> - **OpenSearch 도입**: FAISS → OpenSearch 네이티브 hybrid query 마이그레이션 (Jupyter 실험 후 프로덕션 적용)
 > - 상세 구현은 학습 노트북(`notebooks/phase2/study/`) 참조
 
 ### 1.2 구현 순서 (2025 현업 표준 기반)
@@ -32,7 +33,9 @@ Step 3: Task 1 (RAG 평가 RAGAS) ───────────────�
                                                         │
 [Phase C: RAG Agent 고도화 - 2025 SOTA] 빠르게 완료     │
 Step 4: Task 7 (Chunking 최적화) ──────────────────────┤
-Step 5: Task 9 (Hybrid Search) ────────────────────────┤
+Step 5: Task 9 (Hybrid Search - BM25+FAISS 실험) ─────┤
+Step 5.5: Task 9 (OpenSearch Hybrid 실험/평가 비교) ───┤
+Step 5.6: Task 9 (OpenSearch 프로덕션 마이그레이션) ───┤
 Step 6: Task 8 (Reranker) ─────────────────────────────┤
                                                         │
 [Phase D: SQL Agent 고도화 - 2025 SOTA] 차별화 포인트   │
@@ -69,6 +72,7 @@ Step 14: Task 13 (Streaming + 대화 히스토리) ─────────�
 # requirements.txt에 추가
 pip install ragas>=0.2.0 datasets>=2.0.0 langsmith>=0.1.0 \
             sqlparse>=0.5.0 rank-bm25>=0.2.0 \
+            opensearch-py>=2.4.0 \
             sentence-transformers>=3.0.0 \
             sse-starlette>=1.0.0 sseclient-py>=1.0.0
 ```
@@ -1423,7 +1427,10 @@ for p in params:
 
 ---
 
-### Step 10: Hybrid Search (Task 9)
+### Step 10: Hybrid Search (Task 9) - BM25+FAISS 실험
+
+> **참고**: 이 Step은 BM25+FAISS EnsembleRetriever로 하이브리드 서치 개념을 실험합니다.
+> Step 10.5에서 OpenSearch 네이티브 hybrid query로 전환하고 평가 비교합니다.
 
 #### 10.1 학습 목표
 - BM25 알고리즘 이해 (키워드 기반 TF-IDF 변형)
@@ -1439,14 +1446,16 @@ for p in params:
 | **Hybrid** | 두 장점 결합 | 구현 복잡도 증가 |
 
 > **현업 표준**: 대부분의 프로덕션 RAG 시스템은 Hybrid Search를 사용합니다.
+> 다만 FAISS + rank_bm25로 직접 조립하는 것은 현업 표준이 아닙니다.
+> **현업 표준은 OpenSearch/Elasticsearch 등의 네이티브 hybrid search** 사용입니다.
 
 #### 10.3 신규 파일
 
 | 파일 | 설명 |
 |------|------|
 | `core/search/__init__.py` | 패키지 초기화 |
-| `core/search/bm25_retriever.py` | BM25 검색기 |
-| `core/search/hybrid_retriever.py` | 하이브리드 검색기 |
+| `core/search/bm25_retriever.py` | BM25 검색기 (FAISS 실험용) |
+| `core/search/hybrid_retriever.py` | 하이브리드 검색기 (FAISS 실험용) |
 
 #### 10.4 BM25 Retriever 구현
 
@@ -1558,6 +1567,287 @@ class HybridRetriever:
 - [ ] Hybrid Search 정상 동작
 - [ ] 키워드 매칭 쿼리에서 검색 품질 개선
 - [ ] RAGAS Context Precision 향상 (+5% 이상)
+
+---
+
+### Step 10.5: OpenSearch Hybrid 실험 및 평가 비교 (Task 9) ★신규
+
+> **목적**: OpenSearch 네이티브 hybrid query로 FAISS 대비 동등 이상의 성능 확인
+> **방식**: Docker로 OpenSearch 환경 구성 → Jupyter 노트북에서 인덱싱/검색/평가 비교
+> **프로덕션 코드(core/, scripts/)는 건드리지 않음**
+
+#### 10.5.1 학습 목표
+- OpenSearch 아키텍처 (역인덱스 + 벡터 인덱스)
+- Nori 한국어 형태소 분석기
+- OpenSearch hybrid query (BM25 + kNN 동시 실행)
+- Search Pipeline (normalization-processor)
+
+#### 10.5.2 왜 FAISS 대신 OpenSearch인가?
+
+| 항목 | FAISS | OpenSearch |
+|------|-------|-----------|
+| DB-Engines 랭킹 | 미등록 | 2위 (20.04점) |
+| BM25 | 직접 구현 필요 (rank_bm25) | 내장 (Nori 한국어 분석기) |
+| 점수 융합 | RRF 직접 구현 | search pipeline 내장 |
+| 메타데이터 필터링 | 수동 구현 | 쿼리 DSL 내장 |
+| 한국어 토크나이저 | Kiwi 직접 구현 | Nori 내장 (공식 이미지 포함) |
+| 프로덕션 운영 | 파일 기반, 제한적 | 클러스터링, 모니터링, REST API |
+
+#### 10.5.3 Docker 환경 구성
+
+**수정 파일**: `docker-compose.yml`
+
+```yaml
+  opensearch:
+    image: opensearchproject/opensearch:2.18.0
+    container_name: opensearch
+    environment:
+      - discovery.type=single-node
+      - DISABLE_SECURITY_PLUGIN=true
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+
+volumes:
+  opensearch_data:
+```
+
+**수정 파일**: `requirements.txt`
+```
+opensearch-py>=2.4.0
+```
+
+**수정 파일**: `.env`
+```
+OPENSEARCH_URL=http://localhost:9200
+```
+
+**검증**:
+```bash
+docker-compose up opensearch -d
+curl http://localhost:9200/_cat/plugins  # Nori 확인
+```
+
+#### 10.5.4 실험 노트북
+
+**신규 파일**: `notebooks/phase2/impl/step_06_opensearch_hybrid.ipynb`
+
+노트북 셀 구성:
+
+1. **환경 설정** — imports, OpenSearch 연결 확인
+2. **인덱스 생성** — `hr_documents` 인덱스
+   ```python
+   index_body = {
+       "settings": {
+           "analysis": {
+               "analyzer": {
+                   "nori_analyzer": {
+                       "type": "custom",
+                       "tokenizer": "nori_tokenizer"
+                   }
+               }
+           },
+           "index.knn": True
+       },
+       "mappings": {
+           "properties": {
+               "content": {"type": "text", "analyzer": "nori_analyzer"},
+               "content_embedding": {
+                   "type": "knn_vector",
+                   "dimension": 1024,
+                   "method": {"name": "hnsw", "space_type": "cosinesimil", "engine": "lucene"}
+               },
+               "metadata": {
+                   "properties": {
+                       "source": {"type": "keyword"},
+                       "page": {"type": "integer"},
+                       "chunk_id": {"type": "keyword"}
+                   }
+               }
+           }
+       }
+   }
+   ```
+3. **데이터 적재** — 기존 PDF 청킹(chunk_size=1500, overlap=300) + 임베딩(snowflake-arctic-embed-l-v2.0-ko) + bulk 인덱싱
+4. **Search Pipeline 생성** — BM25/kNN 점수 정규화
+   ```python
+   pipeline_body = {
+       "description": "HR hybrid search pipeline",
+       "phase_results_processors": [
+           {
+               "normalization-processor": {
+                   "normalization": {"technique": "min_max"},
+                   "combination": {"technique": "arithmetic_mean", "parameters": {"weights": [0.5, 0.5]}}
+               }
+           }
+       ]
+   }
+   ```
+5. **Hybrid Search 테스트** — 샘플 쿼리 동작 확인
+6. **RAGAS 평가 — 3가지 retriever 비교**:
+   - FAISS only (기존 baseline)
+   - BM25+FAISS EnsembleRetriever (기존 best)
+   - OpenSearch Hybrid (신규)
+7. **가중치 Grid Search** — BM25/kNN 비율 0.0~1.0 탐색
+8. **비교 테이블 + 시각화**
+9. **결과 저장** → `data/finetuning/opensearch_evaluation_results.json`
+
+#### 10.5.5 평가 조건
+
+- 50개 테스트 케이스 (`data/finetuning/rag_test_50.json`)
+- RAGAS: Context Precision, Context Recall
+- 동일 임베딩 모델: `snowflake-arctic-embed-l-v2.0-ko` (1024d)
+- 동일 LLM (평가자): `gpt-4o-mini`
+
+#### 10.5.6 성공 기준
+
+- [ ] OpenSearch Docker 정상 기동 (Nori 플러그인 확인)
+- [ ] hr_documents 인덱스 생성 + 데이터 적재 완료
+- [ ] Hybrid Search 쿼리 정상 동작
+- [ ] RAGAS 평가: FAISS vs BM25+FAISS vs OpenSearch Hybrid 비교 테이블 작성
+- [ ] **OpenSearch Hybrid >= BM25+FAISS (Avg 0.9292)** 확인
+- [ ] 최적 가중치 확정
+
+---
+
+### Step 10.6: OpenSearch 프로덕션 마이그레이션 (Task 9) ★신규
+
+> **전제**: Step 10.5 평가에서 OpenSearch Hybrid >= FAISS 확인 후 진행
+
+#### 10.6.1 학습 목표
+- LangChain BaseRetriever 커스텀 구현
+- Feature flag 패턴 (환경변수로 retriever 전환)
+- 기존 코드 영향 최소화 전략
+
+#### 10.6.2 신규 파일
+
+| 파일 | 설명 |
+|------|------|
+| `core/retrieval/opensearch_retriever.py` | LangChain 호환 OpenSearch hybrid retriever |
+| `scripts/build_opensearch_index.py` | OpenSearch 인덱스 생성 + 데이터 적재 CLI |
+
+#### 10.6.3 OpenSearch Hybrid Retriever 구현
+
+```python
+# core/retrieval/opensearch_retriever.py
+
+from typing import List
+from langchain_core.callbacks import CallbackManagerForRetrieverRun
+from langchain_core.documents import Document
+from langchain_core.retrievers import BaseRetriever
+from opensearchpy import OpenSearch
+from pydantic import Field
+
+
+class OpenSearchHybridRetriever(BaseRetriever):
+    """OpenSearch 네이티브 hybrid retriever (BM25 + kNN)"""
+
+    client: OpenSearch
+    index_name: str = "hr_documents"
+    embedding_model: object  # HuggingFaceEmbeddings
+    k: int = 5
+    bm25_weight: float = 0.5
+    knn_weight: float = 0.5
+    pipeline_name: str = "hr-hybrid-pipeline"
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
+        # 쿼리 임베딩 생성
+        query_embedding = self.embedding_model.embed_query(query)
+
+        # Hybrid query
+        body = {
+            "size": self.k,
+            "query": {
+                "hybrid": {
+                    "queries": [
+                        {"match": {"content": {"query": query}}},
+                        {"knn": {"content_embedding": {"vector": query_embedding, "k": self.k}}}
+                    ]
+                }
+            }
+        }
+
+        response = self.client.search(
+            index=self.index_name,
+            body=body,
+            params={"search_pipeline": self.pipeline_name}
+        )
+
+        docs = []
+        for hit in response["hits"]["hits"]:
+            docs.append(Document(
+                page_content=hit["_source"]["content"],
+                metadata=hit["_source"].get("metadata", {})
+            ))
+        return docs
+```
+
+#### 10.6.4 인덱스 빌드 스크립트
+
+```python
+# scripts/build_opensearch_index.py
+
+"""
+OpenSearch 인덱스 생성 및 데이터 적재
+기존 build_index.py의 load_documents(), chunk_documents() 재사용
+"""
+
+from opensearchpy import OpenSearch, helpers
+from scripts.build_index import load_documents, chunk_documents
+# ... 인덱스 생성, 임베딩, bulk 적재 로직
+```
+
+#### 10.6.5 RAG Agent 수정
+
+```python
+# core/agents/rag_agent.py 수정
+
+class RAGAgent:
+    def __init__(self, ..., retriever_type: str = None):
+        self.retriever_type = retriever_type or os.getenv("RAG_RETRIEVER_TYPE", "faiss")
+
+        if self.retriever_type == "opensearch":
+            self._init_opensearch_retriever()
+        else:
+            self._init_faiss_retriever()  # 기존 로직
+
+    def _init_opensearch_retriever(self):
+        from core.retrieval.opensearch_retriever import OpenSearchHybridRetriever
+        from opensearchpy import OpenSearch
+
+        client = OpenSearch(hosts=[os.getenv("OPENSEARCH_URL", "http://localhost:9200")])
+        self.retriever = OpenSearchHybridRetriever(
+            client=client,
+            embedding_model=self.embeddings,
+            k=self.top_k
+        )
+```
+
+#### 10.6.6 Docker Compose 업데이트
+
+```yaml
+# docker-compose.yml - api 서비스에 추가
+  api:
+    environment:
+      - RAG_RETRIEVER_TYPE=opensearch
+      - OPENSEARCH_URL=http://opensearch:9200
+    depends_on:
+      - opensearch
+```
+
+#### 10.6.7 성공 기준
+
+- [ ] `python scripts/build_opensearch_index.py` → 인덱싱 완료
+- [ ] `RAG_RETRIEVER_TYPE=opensearch`로 RAG Agent 정상 동작
+- [ ] 기존 `RAG_RETRIEVER_TYPE=faiss`도 정상 동작 (하위호환)
 
 ---
 
@@ -1900,7 +2190,8 @@ langsmith>=0.1.0
 sqlparse>=0.5.0
 
 # Phase 2 - 검색 고도화
-rank-bm25>=0.2.0
+rank-bm25>=0.2.0               # FAISS 실험용 BM25
+opensearch-py>=2.4.0            # OpenSearch 클라이언트 (프로덕션 hybrid search)
 sentence-transformers>=3.0.0
 
 # Phase 2 - UX
@@ -1924,7 +2215,11 @@ LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
 # Guardrails
 GUARDRAILS_ENABLED=true
 
-# Hybrid Search
+# OpenSearch (Hybrid Search - 프로덕션)
+OPENSEARCH_URL=http://localhost:9200
+RAG_RETRIEVER_TYPE=faiss  # faiss (기본값) 또는 opensearch
+
+# Hybrid Search (FAISS 실험용, OpenSearch 마이그레이션 후 불필요)
 USE_HYBRID_SEARCH=true
 BM25_WEIGHT=0.5
 FAISS_WEIGHT=0.5
@@ -1950,7 +2245,12 @@ core/
 │   ├── guardrails.py
 │   └── sql_validator.py
 │
-├── search/            # Phase 2: 검색 고도화
+├── retrieval/         # Phase 2: OpenSearch 검색 ★신규
+│   ├── __init__.py
+│   ├── korean_bm25.py           # 기존 Kiwi BM25
+│   └── opensearch_retriever.py  # OpenSearch hybrid retriever
+│
+├── search/            # Phase 2: FAISS 검색 (실험용, 레거시)
 │   ├── __init__.py
 │   ├── bm25_retriever.py
 │   ├── hybrid_retriever.py
@@ -1992,8 +2292,9 @@ notebooks/phase2/
 | 2 | Task 2 | study_02_sql_evaluation | step_02_sql_evaluation | SQL 평가 버그 수정 |
 | 3 | Task 1 | study_03_rag_evaluation | step_03_rag_evaluation | RAGAS 평가 |
 | 4 | Task 7 | study_04_chunking | step_04_chunking | 청킹 최적화 |
-| 5 | Task 9 | study_05_hybrid_search | step_05_hybrid_search | Hybrid Search |
-| 6 | Task 8 | study_06_reranker | step_06_reranker | Reranker |
+| 5 | Task 9 | study_05_hybrid_search | step_05_hybrid_search | Hybrid Search (BM25+FAISS) |
+| 5.5 | Task 9 | - | step_06_opensearch_hybrid | OpenSearch Hybrid 실험/평가 비교 |
+| 6 | Task 8 | study_06_reranker | step_07_reranker | Reranker |
 | 7 | Task 11 | study_07_schema_enhancement | step_07_schema_enhancement | 스키마 설명 추가 |
 | 8 | Task 10 | study_08_fewshot_embedding | step_08_fewshot_embedding | Few-shot 임베딩 검색 |
 | 9 | Task 10-2 | study_09_masked_fewshot | step_09_masked_fewshot | 마스크 질문 임베딩 |
@@ -2013,3 +2314,4 @@ notebooks/phase2/
 | 1.0 | 2025-01-12 | 초안 작성 |
 | 2.0 | 2025-01-16 | **2025 현업 표준 적용**: Phase A-F 순서 재정렬, SQL 고도화(Step 4-8) 추가, RAG 순서 수정(Hybrid→Reranker), study/ 노트북 구조 반영 |
 | 2.1 | 2025-01-16 | **실행 순서 변경**: RAG 먼저 (Phase C, Step 4-6), SQL 나중 (Phase D, Step 7-11) - RAG는 빠르게 완료, SQL은 차별화 포인트 |
+| 2.2 | 2025-02-21 | **OpenSearch 마이그레이션**: Step 10.5 (OpenSearch 실험/평가 노트북), Step 10.6 (프로덕션 마이그레이션) 추가. opensearch-py, OPENSEARCH_URL, RAG_RETRIEVER_TYPE 환경변수 추가. core/retrieval/opensearch_retriever.py, scripts/build_opensearch_index.py 신규 파일 추가 |

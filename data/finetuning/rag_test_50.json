@@ -1,0 +1,352 @@
+[
+  {
+    "id": 1,
+    "question": "병가는 어떻게 사용하나요?",
+    "expected_keywords": ["병가", "질병", "부상", "진단서"],
+    "ground_truth": "병가는 질병 또는 부상으로 인해 근무가 어려운 경우 사용하는 휴가입니다. 연 7일이 부여되며, 3일 이상 사용 시 진단서를 제출해야 합니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 2,
+    "question": "연차휴가는 며칠 받을 수 있어?",
+    "expected_keywords": ["연차", "15일", "25일", "근속"],
+    "ground_truth": "연차는 입사 첫해 월 1일씩 최대 11일, 1년 이상 근속 시 15일을 부여하고, 3년 차부터 2년마다 1일씩 추가하여 최대 25일까지 부여됩니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 3,
+    "question": "육아휴직은 얼마 동안 쓸 수 있어?",
+    "expected_keywords": ["육아휴직", "8세", "자녀", "양육"],
+    "ground_truth": "육아휴직은 만 8세 이하 자녀를 양육하기 위해 일정 기간 근무를 중단하는 것입니다. 법령에 따라 운영됩니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 4,
+    "question": "경조사휴가 종류 알려줘",
+    "expected_keywords": ["경조사", "결혼", "출산", "사망"],
+    "ground_truth": "경조사휴가는 본인 결혼 5일, 배우자 출산 10일, 부모·배우자 부모 사망 5일, 자녀 결혼 1일을 부여합니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 5,
+    "question": "안식휴가는 언제 받을 수 있어?",
+    "expected_keywords": ["안식휴가", "장기", "근속", "재충전"],
+    "ground_truth": "안식휴가는 장기 근속자에게 재충전 기회를 제공하기 위해 부여하는 장기 유급휴가입니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 6,
+    "question": "가족돌봄휴가는 어떻게 써?",
+    "expected_keywords": ["가족돌봄", "질병", "사고", "노령"],
+    "ground_truth": "가족의 질병, 사고, 노령 등으로 돌봄이 필요한 경우 연 10일의 가족돌봄휴가를 사용할 수 있으며, 이 중 5일은 유급으로 처리됩니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 7,
+    "question": "리프레시휴가는 언제 받아?",
+    "expected_keywords": ["리프레시", "5년", "근속", "추가"],
+    "ground_truth": "5년 이상 근속자에게는 5년 단위로 리프레시휴가 5일을 추가 부여하며, 연차와 별도로 운영됩니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 8,
+    "question": "특별휴가는 어떤 경우에 받을 수 있어?",
+    "expected_keywords": ["특별휴가", "재해", "재난", "회사"],
+    "ground_truth": "특별휴가는 회사가 인정한 사유에 따라 1~3일 범위에서 부여할 수 있습니다. 재해·재난 시 최대 5일의 특별휴가를 부여할 수 있습니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 9,
+    "question": "시차출근제는 어떻게 운영돼?",
+    "expected_keywords": ["시차출근", "08:30", "10:30", "선택"],
+    "ground_truth": "시차출근은 08:30~10:30 사이에서 출근시간을 선택할 수 있으며, 선택한 출근시간 기준으로 퇴근시간도 동일하게 조정됩니다. 월 최대 12회까지 허용됩니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 10,
+    "question": "재택근무는 어떻게 하는 거야?",
+    "expected_keywords": ["재택근무", "자택", "정보통신기기", "업무"],
+    "ground_truth": "재택근무는 회사 사무실이 아닌 자택 등에서 정보통신기기를 활용하여 업무를 수행하는 근무 형태입니다. 주 2~3회를 권장하며, 코어타임(10:00~16:00)에는 연락 가능 상태를 유지해야 합니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 11,
+    "question": "워케이션은 어떻게 신청해?",
+    "expected_keywords": ["워케이션", "휴양지", "업무", "휴가"],
+    "ground_truth": "워케이션은 휴양지 등에서 업무와 휴식을 병행하는 근무 형태로, 연 2회, 회당 최대 2주까지 신청 가능합니다. 사용 예정일 14일 전까지 신청해야 합니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 12,
+    "question": "유연근무제 코어타임이 언제야?",
+    "expected_keywords": ["코어타임", "10:00", "16:00", "유연근무"],
+    "ground_truth": "유연근무제 적용 시 반드시 근무해야 하는 코어타임은 10:00~16:00입니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 13,
+    "question": "지각하면 어떻게 돼?",
+    "expected_keywords": ["지각", "15분", "경고", "면담"],
+    "ground_truth": "지각은 15분 이상 지연 시 1회로 산정합니다. 월 3회 초과 시 근태 안내가 제공되며, 월 6회 이상이면 인사부서 면담을 진행합니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 14,
+    "question": "조퇴 규정이 뭐야?",
+    "expected_keywords": ["조퇴", "퇴근시간", "15분", "산정"],
+    "ground_truth": "조퇴는 정해진 퇴근시간 이전에 업무를 종료하고 퇴근하는 것으로, 15분 이상을 1회로 산정합니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 15,
+    "question": "무단결근하면 어떻게 돼?",
+    "expected_keywords": ["무단결근", "급여", "공제", "경위서"],
+    "ground_truth": "무단결근은 급여에서 일 단위로 공제되며, 2일 연속 발생 시 서면 경위서를 제출해야 합니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 16,
+    "question": "결근 처리는 어떻게 해?",
+    "expected_keywords": ["결근", "유급", "무급", "승인"],
+    "ground_truth": "결근은 출근해야 할 날에 출근하지 않는 것으로, 사전 승인 여부에 따라 유급/무급/무단결근으로 구분합니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 17,
+    "question": "건강검진 지원 받을 수 있어?",
+    "expected_keywords": ["건강검진", "복리후생", "지원"],
+    "ground_truth": "회사는 직원의 건강을 위해 건강검진을 지원하며, 질병휴직 복귀 전 건강검진을 실시합니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 18,
+    "question": "장비 세팅비 지원이 얼마야?",
+    "expected_keywords": ["장비", "세팅비", "50만원", "지원"],
+    "ground_truth": "회사는 재택근무 환경 구축을 위해 입사 시 장비 세팅비 50만 원을 일시 지원합니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 19,
+    "question": "경조금은 얼마 받아?",
+    "expected_keywords": ["경조금", "결혼", "사망", "지급"],
+    "ground_truth": "본인 결혼 시 경조금 30만 원, 친부모 사망 시 조의금 30만 원이 지급됩니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 20,
+    "question": "교대수당은 얼마야?",
+    "expected_keywords": ["교대수당", "야간조", "2만원", "추가"],
+    "ground_truth": "고객지원 직군 야간조 근무 시 야간근로수당 외 교대수당 일 2만 원을 추가 지급합니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 21,
+    "question": "휴일근로하면 대체휴무 받을 수 있어?",
+    "expected_keywords": ["휴일근로", "대체휴무", "4시간", "60일"],
+    "ground_truth": "휴일근로 시간이 4시간 이상일 경우 1일 대체휴무, 4시간 미만일 경우 0.5일 대체휴무를 부여합니다. 대체휴무는 발생일로부터 60일 이내 사용해야 합니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 22,
+    "question": "대체휴무 유효기간이 얼마야?",
+    "expected_keywords": ["대체휴무", "60일", "소멸", "연장"],
+    "ground_truth": "대체휴무는 발생일로부터 60일 이내 사용해야 하며, 부서장 승인 시 30일 연장이 가능합니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 23,
+    "question": "수습기간이 뭐야?",
+    "expected_keywords": ["수습", "시용", "정규직", "적합성", "평가"],
+    "ground_truth": "수습(시용) 기간은 정규직 입사 후 정식 임용 전까지의 기간으로, 직무 수행 능력과 조직 적합성을 평가받는 기간입니다. 기본 3개월이며, 직무 난이도가 높은 직군은 4개월까지 연장할 수 있습니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 24,
+    "question": "채용 절차는 어떻게 돼?",
+    "expected_keywords": ["채용", "서류", "면접", "신원확인"],
+    "ground_truth": "채용 절차는 서류 심사, 직무 역량 평가, 면접, 신원·배경 확인의 4단계로 구성됩니다. 면접은 최소 2회 진행됩니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 25,
+    "question": "난임치료휴가는 며칠이야?",
+    "expected_keywords": ["난임", "치료", "5일", "유급"],
+    "ground_truth": "난임 치료를 받는 직원에게는 연 5일의 유급 난임치료휴가를 부여합니다. 체외수정 등 고난도 시술의 경우 추가 2일을 부여할 수 있습니다.",
+    "category": "policy_lookup"
+  },
+  {
+    "id": 26,
+    "question": "정규직이 뭐야?",
+    "expected_keywords": ["정규직", "기간", "수습", "정식"],
+    "ground_truth": "정규직은 기간의 정함이 없는 근로계약을 체결한 직원으로, 수습 기간을 완료하고 정식 임용된 자를 말합니다.",
+    "category": "term_definition"
+  },
+  {
+    "id": 27,
+    "question": "계약직은 뭐가 달라?",
+    "expected_keywords": ["계약직", "1년", "기간", "갱신"],
+    "ground_truth": "계약직은 1년 이하의 기간을 정하여 근로계약을 체결한 직원입니다. 계약 기간 만료 시 갱신 여부를 심사합니다.",
+    "category": "term_definition"
+  },
+  {
+    "id": 28,
+    "question": "인턴은 어떻게 돼?",
+    "expected_keywords": ["인턴", "정규직", "3~6개월", "검증"],
+    "ground_truth": "인턴은 정규직 채용을 전제로 일정 기간 근무하며 직무 적합성을 검증받는 자입니다. 인턴십 기간은 통상 3~6개월입니다.",
+    "category": "term_definition"
+  },
+  {
+    "id": 29,
+    "question": "정량평가가 뭐야?",
+    "expected_keywords": ["정량평가", "매출", "목표", "수치"],
+    "ground_truth": "정량평가는 매출, 목표 달성률 등 수치로 측정 가능한 성과를 평가하는 방식입니다.",
+    "category": "term_definition"
+  },
+  {
+    "id": 30,
+    "question": "KPI가 뭔지 알려줘",
+    "expected_keywords": ["KPI", "핵심성과지표", "성과", "측정"],
+    "ground_truth": "KPI는 Key Performance Indicator의 약자로, 개인 또는 조직의 성과를 측정하는 핵심 지표입니다.",
+    "category": "term_definition"
+  },
+  {
+    "id": 31,
+    "question": "PIP가 뭐야?",
+    "expected_keywords": ["PIP", "성과개선", "저성과자", "프로그램"],
+    "ground_truth": "PIP는 Performance Improvement Program의 약자로, 저성과자의 성과 개선을 지원하는 프로그램입니다. 3개월간 참여하게 됩니다.",
+    "category": "term_definition"
+  },
+  {
+    "id": 32,
+    "question": "통상임금이 뭐야?",
+    "expected_keywords": ["통상임금", "연장", "야간", "수당"],
+    "ground_truth": "통상임금은 연장·야간·휴일근로수당 등을 산정할 때 기준이 되는 임금입니다.",
+    "category": "term_definition"
+  },
+  {
+    "id": 33,
+    "question": "성과급이 뭐야?",
+    "expected_keywords": ["성과급", "평가", "실적", "차등"],
+    "ground_truth": "성과급은 평가 결과 및 회사 실적에 따라 차등 지급되는 변동 급여입니다.",
+    "category": "term_definition"
+  },
+  {
+    "id": 34,
+    "question": "정직 징계가 뭐야?",
+    "expected_keywords": ["정직", "출근", "정지", "급여"],
+    "ground_truth": "정직은 일정 기간 출근을 정지하고 급여를 지급하지 않는 징계입니다. 최대 15일까지 부여할 수 있습니다.",
+    "category": "term_definition"
+  },
+  {
+    "id": 35,
+    "question": "VPN이 뭐야?",
+    "expected_keywords": ["VPN", "가상", "사설망", "외부", "사내망"],
+    "ground_truth": "VPN은 Virtual Private Network의 약자로, 외부에서 사내망에 안전하게 접속하기 위한 가상 사설망입니다.",
+    "category": "term_definition"
+  },
+  {
+    "id": 36,
+    "question": "연장근로 수당은 어떻게 계산해?",
+    "expected_keywords": ["연장근로", "통상임금", "50%", "가산"],
+    "ground_truth": "연장근로는 기본근무시간을 초과하여 근무하는 것으로, 통상임금의 50%를 가산하여 수당을 지급합니다.",
+    "category": "calculation"
+  },
+  {
+    "id": 37,
+    "question": "야간근로수당 계산법 알려줘",
+    "expected_keywords": ["야간근로", "22:00", "06:00", "50%"],
+    "ground_truth": "야간근로는 22:00부터 익일 06:00 사이에 근무하는 것으로, 통상임금의 50%를 가산하여 수당을 지급합니다.",
+    "category": "calculation"
+  },
+  {
+    "id": 38,
+    "question": "연봉 인상률은 얼마야?",
+    "expected_keywords": ["인상률", "S등급", "7~10%", "평가"],
+    "ground_truth": "기본급 조정은 평가 등급에 따라 반영됩니다. S등급은 7~10%, A등급은 4~6%, B등급은 1~3% 범위에서 조정합니다.",
+    "category": "calculation"
+  },
+  {
+    "id": 39,
+    "question": "성과급은 얼마나 받을 수 있어?",
+    "expected_keywords": ["성과급", "S등급", "15~20%", "기본급"],
+    "ground_truth": "성과급은 평가 등급에 따라 차등 지급됩니다. S등급은 기본급의 15~20%, A등급은 8~12%, B등급은 3~6%를 지급합니다.",
+    "category": "calculation"
+  },
+  {
+    "id": 40,
+    "question": "5년차면 연차 며칠이야?",
+    "expected_keywords": ["연차", "5년", "17일", "추가"],
+    "ground_truth": "1년 이상 근속 시 15일 기본 부여, 3년 차부터 2년마다 1일씩 추가되므로 5년 차는 17일입니다.",
+    "category": "calculation"
+  },
+  {
+    "id": 41,
+    "question": "육아기 근로시간 단축은 어떻게 해?",
+    "expected_keywords": ["육아기", "단축", "15~35시간", "8세"],
+    "ground_truth": "만 8세 이하 자녀를 둔 직원은 육아기 근로시간 단축을 신청할 수 있으며, 주 15~35시간 범위에서 선택합니다.",
+    "category": "calculation"
+  },
+  {
+    "id": 42,
+    "question": "감봉 징계는 얼마나 차감돼?",
+    "expected_keywords": ["감봉", "기본급", "5%", "1개월"],
+    "ground_truth": "감봉은 월 기본급의 5% 범위 내에서 1개월 적용을 원칙으로 합니다.",
+    "category": "calculation"
+  },
+  {
+    "id": 43,
+    "question": "연장근로 한도가 얼마야?",
+    "expected_keywords": ["연장근로", "주 12시간", "한도"],
+    "ground_truth": "연장근로는 주 12시간 이내로 제한됩니다. 개발 직군은 집중개발기간 중 주 16시간까지 확대될 수 있습니다.",
+    "category": "calculation"
+  },
+  {
+    "id": 44,
+    "question": "복지포인트는 어디에 쓸 수 있어?",
+    "expected_keywords": ["복지포인트", "선택적", "복리후생", "자유롭게"],
+    "ground_truth": "복지포인트는 회사가 직원에게 부여하는 선택적 복리후생 비용으로, 지정된 항목 내에서 자유롭게 사용할 수 있습니다.",
+    "category": "benefit_lookup"
+  },
+  {
+    "id": 45,
+    "question": "직무전문수당은 얼마야?",
+    "expected_keywords": ["직무전문수당", "5만~20만원", "기술력", "난이도"],
+    "ground_truth": "직무 전문수당은 해당 직무에서 요구되는 기술력·난이도에 따라 월 5만~20만 원 범위에서 책정됩니다.",
+    "category": "benefit_lookup"
+  },
+  {
+    "id": 46,
+    "question": "교육비 지원 받을 수 있어?",
+    "expected_keywords": ["교육", "훈련", "역량", "지원"],
+    "ground_truth": "회사는 직원의 직무 수행 능력 향상을 위해 필요한 교육 및 훈련을 제공합니다. 외부 교육 또는 자격 취득을 지원할 수 있습니다.",
+    "category": "benefit_lookup"
+  },
+  {
+    "id": 47,
+    "question": "우수성과자 혜택이 뭐야?",
+    "expected_keywords": ["우수성과자", "특별성과급", "5%", "교육"],
+    "ground_truth": "2년 연속 A등급을 받은 직원은 특별성과급(연봉 5% 이내) 또는 직무 전문수당 상향(월 최대 10만 원)이 가능하며, 사내 교육·컨퍼런스·외부 연수 기회를 우선 제공받습니다.",
+    "category": "benefit_lookup"
+  },
+  {
+    "id": 48,
+    "question": "산전검진휴가는 며칠이야?",
+    "expected_keywords": ["산전검진", "임신", "월 1일", "유급"],
+    "ground_truth": "임신 중인 직원에게는 정기 산전검진을 위해 월 1일의 유급 산전검진휴가를 부여합니다. 임신 초기(12주 이내) 및 말기(36주 이후)에는 월 2일까지 확대됩니다.",
+    "category": "benefit_lookup"
+  },
+  {
+    "id": 49,
+    "question": "재택근무랑 시차출근 뭐가 달라?",
+    "expected_keywords": ["재택근무", "시차출근", "자택", "출근시간"],
+    "ground_truth": "시차출근은 08:30~10:30 사이에서 출근시간을 선택하는 것이고, 재택근무는 회사 사무실이 아닌 자택 등에서 업무를 수행하는 것입니다. 시차출근은 회사 출근이 필요하지만, 재택근무는 출근하지 않습니다.",
+    "category": "comparison"
+  },
+  {
+    "id": 50,
+    "question": "연차랑 특별휴가 차이가 뭐야?",
+    "expected_keywords": ["연차", "특별휴가", "근로기준법", "별도"],
+    "ground_truth": "연차유급휴가는 근로기준법에 따라 근속 연수에 비례하여 부여되는 휴가이고, 특별휴가는 연차 외에 회사가 별도로 부여하는 휴가입니다. 리프레시휴가, 안식휴가 등이 특별휴가에 해당합니다.",
+    "category": "comparison"
+  }
+]

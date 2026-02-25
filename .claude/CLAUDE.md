@@ -5,6 +5,25 @@
 - 프로젝트 로드맵: @docs/ROADMAP.md
 - 트러블슈팅: @docs/troubleshooting/README.md
 
+## 패키지 설치 규칙
+
+**requirements.txt 변경 시 반드시 지켜야 할 규칙:**
+
+1. **절대 `pip install` 직접 실행 금지** - requirements.txt에만 추가
+2. requirements.txt 수정 후 반드시 사용자에게 설치 명령어 안내:
+   ```
+   requirements.txt에 패키지를 추가했습니다.
+   아래 명령어로 설치해주세요:
+
+   pip install -r requirements.txt
+   ```
+3. 특정 패키지만 설치할 경우:
+   ```
+   pip install 패키지명>=버전
+   ```
+
+---
+
 ## 트러블슈팅 기록 규칙
 
 **에러를 디버깅하고 해결했을 때, 반드시 아래 형식으로 문서를 작성하세요.**
