@@ -37,7 +37,10 @@ echo "OLLAMA_HOST=http://localhost:11434" > .env
 # 4. 실행 (Docker)
 docker-compose up -d
 
-# 5. 접속
+# 5. OpenSearch 인덱스 빌드
+python scripts/build_opensearch_index.py --rebuild
+
+# 6. 접속
 # API: http://localhost:8000/docs
 # UI:  http://localhost:8501
 ```
@@ -84,10 +87,16 @@ API 비용 없이 **완전 오프라인** 실행 가능
 - **QLoRA 파인튜닝**: HR 도메인 특화 (qwen3-hr)
 - **sentence-transformers**: 로컬 임베딩
 
-### 4. **현업 표준 아키텍처** 🏗️
+### 4. **OpenSearch Hybrid Search** 🔍
+BM25(Nori 한국어 분석기) + kNN 벡터 검색을 결합한 **네이티브 하이브리드 서치**
+- **BM25 60% + kNN 40%** 최적 가중치 (Grid Search로 도출)
+- **Recall 0.99** 달성 (RAGAS 평가)
+- FAISS 대비 검색 품질 향상, `retriever_type` 설정으로 전환 가능
+
+### 5. **현업 표준 아키텍처** 🏗️
 - **LangGraph StateGraph**: 복잡한 플로우 선언적 구현
 - **FastAPI 3-tier**: API/Service/Model 분리 (15개 파일)
-- **FAISS 벡터 검색**: Meta의 고성능 라이브러리
+- **OpenSearch 3.5**: 하이브리드 검색 (BM25 + kNN)
 - **Docker Compose**: 원클릭 실행 환경
 
 ---
@@ -116,10 +125,10 @@ API 비용 없이 **완전 오프라인** 실행 가능
                                          └──────────┼───────────┼──────────┘
                                                     │           │
                                                     ▼           ▼
-                                               ┌────────┐  ┌────────┐
-                                               │ MySQL  │  │ FAISS  │
-                                               │   DB   │  │ Index  │
-                                               └────────┘  └────────┘
+                                               ┌────────┐  ┌────────────┐
+                                               │ MySQL  │  │ OpenSearch  │
+                                               │   DB   │  │ BM25 + kNN │
+                                               └────────┘  └────────────┘
 ```
 
 ---
@@ -133,7 +142,8 @@ API 비용 없이 **완전 오프라인** 실행 가능
 | **LLM** | Ollama + Qwen3:8B | 100% 로컬, API 비용 제로, 온프레미스 |
 | **Fine-tuned** | qwen3-hr (QLoRA) | HR 도메인 특화 모델 |
 | **Embedding** | sentence-transformers | 로컬 실행, 한글 지원 |
-| **Vector DB** | FAISS | 무료, 로컬 실행, 빠름 |
+| **Search Engine** | OpenSearch 3.5 | BM25(Nori) + kNN 하이브리드 검색 |
+| **Vector DB** | FAISS (fallback) | 무료, 로컬 실행, 빠름 |
 | **Web Framework** | FastAPI | Async, 자동 문서화, 현업 표준 |
 | **Frontend** | Streamlit | 빠른 프로토타이핑, Python only |
 | **Database** | MySQL 8.0 | HR 시스템 업계 표준 |
@@ -194,16 +204,18 @@ SQL: SELECT AVG(s.base_salary)
 Result: 6,500,000원
 ```
 
-### 📚 RAG Agent (FAISS 검색)
+### 📚 RAG Agent (OpenSearch Hybrid Search)
 
 **질문:** "육아휴직은 몇 개월까지 가능해?"
 
 ```
-[FAISS 검색]
-Top 3 유사 문서 검색 → 규정 2.4 "출산/육아휴직" 발견
+[OpenSearch Hybrid Search]
+BM25(Nori): "육아휴직" 키워드 매칭
+kNN: 의미적 유사도 벡터 검색
+→ 가중 결합 (BM25 60% + kNN 40%) → Top 5 문서
 
 [LLM 답변 생성]
-"육아휴직은 최대 1년(12개월)까지 가능하며, 
+"육아휴직은 최대 1년(12개월)까지 가능하며,
 통상임금의 80%가 지급됩니다."
 
 [참조 문서]
@@ -241,7 +253,10 @@ enterprise-hr-agent/
 │   ├── agents/
 │   │   ├── hr_agent.py          # 통합 Agent (LangGraph)
 │   │   ├── sql_agent.py         # SQL Agent + Self-Correction
-│   │   └── rag_agent.py         # RAG Agent (FAISS)
+│   │   └── rag_agent.py         # RAG Agent (OpenSearch/FAISS)
+│   ├── retrieval/
+│   │   ├── opensearch_client.py # OpenSearch Hybrid Search 클라이언트
+│   │   └── korean_bm25.py       # 한국어 BM25 (Kiwi 형태소 분석)
 │   ├── database/
 │   │   └── connection.py        # DB 연결 + 스키마 조회
 │   ├── routing/
@@ -255,9 +270,16 @@ enterprise-hr-agent/
 ├── data/
 │   ├── db_init/init.sql         # MySQL 스키마 + 더미 데이터 (15명)
 │   ├── company_docs/            # 사규 문서 (PDF)
-│   └── faiss_index/             # FAISS 벡터 인덱스
+│   └── faiss_index/             # FAISS 벡터 인덱스 (fallback)
 │
-├── docker-compose.yml           # MySQL + API + Streamlit
+├── docker/
+│   └── opensearch/Dockerfile    # OpenSearch 3.5 + Nori 플러그인
+│
+├── scripts/
+│   ├── build_index.py           # FAISS 인덱스 빌드
+│   └── build_opensearch_index.py # OpenSearch 인덱스 빌드
+│
+├── docker-compose.yml           # MySQL + API + OpenSearch + Streamlit
 ├── Dockerfile
 └── requirements.txt
 ```
@@ -315,40 +337,26 @@ template = """
 분류:"""
 ```
 
-### 4. RAG 파라미터 설정
+### 4. RAG Retriever 비교 (RAGAS 평가)
 
-#### 최적 파라미터 (RAGAS 평가 기준)
+| Retriever | Precision | Recall | Average |
+|-----------|-----------|--------|---------|
+| FAISS only | 0.8427 | 0.9500 | 0.8964 |
+| BM25+FAISS (50/50) | 0.8717 | 0.9800 | 0.9259 |
+| **OpenSearch Hybrid (60/40)** | **0.8392** | **0.9900** | **0.9146** |
+
+> Grid Search로 BM25 60% + kNN 40% 최적 가중치 도출. Recall 0.99 달성.
+
+#### 설정값
 
 | 파라미터 | 설정값 | 근거 |
 |---------|-------|------|
-| **chunk_size** | 1,000자 | RAGAS Context Precision 0.70 (500자 대비 +0.15) |
-| **chunk_overlap** | 200자 (20%) | 문맥 연결, LangChain 권장값 |
-| **top_k** | 5 | Context Recall 1.0 달성 |
-| **temperature** | 0 | 정확성 우선, RAG 표준 |
-
-#### RAGAS 평가 결과
-
-| 설정 | Context Precision | Context Recall | 평균 |
-|-----|-------------------|----------------|-----|
-| **1000/200, k=5** | 0.702 | 1.000 | **0.851** |
-| 1000/200, k=3 | 0.692 | 0.900 | 0.796 |
-| 500/50, k=5 | 0.553 | 1.000 | 0.776 |
-| 500/50, k=3 | 0.558 | 0.800 | 0.679 |
-
-> **RAGAS**: LLM 기반 RAG 평가 프레임워크. 키워드 매칭보다 의미적 관련성을 정확히 평가.
-
-#### 파라미터 영향도
-
-| 순위 | 파라미터 | 영향 | 설명 |
-|-----|---------|-----|------|
-| 1 | chunk_size | 높음 | 맥락 충분성에 가장 큰 영향 |
-| 2 | chunk_overlap | 높음 | 문맥 손실 방지 |
-| 3 | top_k | 중간 | Recall에 직접 영향 |
-| 4 | temperature | 낮음 | RAG는 0 고정이 표준 |
-
-#### 참고 자료
-- [LangChain RAG Tutorial](https://python.langchain.com/docs/tutorials/rag/) - chunk_size=1000, overlap=200
-- [RAGAS Documentation](https://docs.ragas.io/) - RAG 평가 프레임워크
+| **chunk_size** | 1,500자 | Chunking 최적화 실험 |
+| **chunk_overlap** | 300자 (20%) | 문맥 연결 |
+| **top_k** | 5 | Recall 0.99 달성 |
+| **BM25 weight** | 0.6 | Grid Search 최적값 |
+| **kNN weight** | 0.4 | Grid Search 최적값 |
+| **embedding** | snowflake-arctic-embed-l-v2.0-ko (1024d) | 한국어 특화 |
 
 ---
 
@@ -364,10 +372,11 @@ template = """
 
 ### RAG Agent
 - ✅ PDF 문서 로드 (PDFPlumber)
-- ✅ RecursiveCharacterTextSplitter (chunk_size=1000, overlap=200)
-- ✅ 로컬 임베딩 (snowflake-arctic-embed2)
-- ✅ FAISS 벡터 검색 (Top-K=5)
-- ✅ RAGAS 기반 파라미터 최적화
+- ✅ RecursiveCharacterTextSplitter (chunk_size=1500, overlap=300)
+- ✅ 로컬 임베딩 (snowflake-arctic-embed-l-v2.0-ko, 1024d)
+- ✅ **OpenSearch Hybrid Search** (BM25 Nori + kNN, 가중치 0.6/0.4)
+- ✅ FAISS fallback 지원 (`RAG_RETRIEVER_TYPE=faiss`)
+- ✅ RAGAS 기반 파라미터 최적화 (Recall 0.99)
 - ✅ 참조 문서 출처 제공
 
 ### Router
@@ -383,7 +392,7 @@ template = """
 |---------|-------|--------------|
 | **v1.0** ✅ | 기본 완성 | SQL Agent, RAG Agent, Router |
 | **v1.5** ✅ | 로컬 LLM | OpenAI → Ollama/Qwen3 전환, 파인튜닝 (qwen3-hr) |
-| **v2.0** 🚧 | 2025 현업 표준 | SQL: Few-shot, SQLCoder / RAG: Reranker, Hybrid Search |
+| **v2.0** ✅ | 2025 현업 표준 | OpenSearch Hybrid Search (BM25+kNN), RAGAS 평가 |
 | v2.1 | 모니터링 | LangSmith 트레이싱, RAGAS 평가 |
 | v2.2 | 보안 | PII 마스킹, SQL Validation |
 
