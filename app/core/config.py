@@ -46,6 +46,19 @@ class Settings(BaseSettings):
     RAG_EMBEDDING_MODEL: str = "text-embedding-3-small"
     RAG_INDEX_PATH: Optional[str] = None  # None이면 기본 경로 사용
 
+    # === RAG Retriever 타입 ===
+    RAG_RETRIEVER_TYPE: str = Field(default="opensearch", env="RAG_RETRIEVER_TYPE")  # "faiss" | "opensearch"
+
+    # === RAG Embedding 설정 (LLM Provider와 분리) ===
+    RAG_EMBEDDING_PROVIDER: str = Field(default="huggingface", env="RAG_EMBEDDING_PROVIDER")
+
+    # === OpenSearch 설정 ===
+    OPENSEARCH_URL: str = Field(default="http://localhost:9200", env="OPENSEARCH_URL")
+    OPENSEARCH_INDEX_NAME: str = Field(default="hr_documents", env="OPENSEARCH_INDEX_NAME")
+    OPENSEARCH_PIPELINE_NAME: str = Field(default="hr-hybrid-pipeline", env="OPENSEARCH_PIPELINE_NAME")
+    OPENSEARCH_BM25_WEIGHT: float = Field(default=0.6, env="OPENSEARCH_BM25_WEIGHT")
+    OPENSEARCH_KNN_WEIGHT: float = Field(default=0.4, env="OPENSEARCH_KNN_WEIGHT")
+
     # === Database 설정 ===
     DATABASE_URL: Optional[str] = Field(default=None, env="DATABASE_URL")
     DB_POOL_SIZE: int = 5

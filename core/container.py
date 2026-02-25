@@ -107,12 +107,14 @@ class Container:
             else self.settings.LLM_MODEL
         )
 
-        # Provider에 따라 임베딩 모델명 선택
-        embedding_model = (
-            self.settings.OLLAMA_EMBEDDING_MODEL
-            if self.settings.LLM_PROVIDER == "ollama"
-            else self.settings.RAG_EMBEDDING_MODEL
-        )
+        # RAG_EMBEDDING_PROVIDER 기반으로 임베딩 모델명 선택
+        embedding_provider = self.settings.RAG_EMBEDDING_PROVIDER
+        if embedding_provider == "ollama":
+            embedding_model = self.settings.OLLAMA_EMBEDDING_MODEL
+        elif embedding_provider == "huggingface":
+            embedding_model = "dragonkue/snowflake-arctic-embed-l-v2.0-ko"
+        else:
+            embedding_model = self.settings.RAG_EMBEDDING_MODEL
 
         return RAGAgent(
             model=model,
@@ -122,6 +124,13 @@ class Container:
             index_path=self.settings.RAG_INDEX_PATH,
             provider=self.settings.LLM_PROVIDER,
             base_url=self.settings.OLLAMA_BASE_URL,
+            retriever_type=self.settings.RAG_RETRIEVER_TYPE,
+            embedding_provider=embedding_provider,
+            opensearch_url=self.settings.OPENSEARCH_URL,
+            opensearch_index_name=self.settings.OPENSEARCH_INDEX_NAME,
+            opensearch_pipeline_name=self.settings.OPENSEARCH_PIPELINE_NAME,
+            opensearch_bm25_weight=self.settings.OPENSEARCH_BM25_WEIGHT,
+            opensearch_knn_weight=self.settings.OPENSEARCH_KNN_WEIGHT,
         )
 
     @cached_property

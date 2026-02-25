@@ -33,6 +33,9 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - DATABASE_URL=mysql+pymysql://user:password@db:3306/enterprise_hr_db?charset=utf8mb4
+      - OPENSEARCH_URL=http://opensearch:9200
+      - RAG_RETRIEVER_TYPE=opensearch
+      - RAG_EMBEDDING_PROVIDER=huggingface
     volumes:
       - ./app:/app/app
       - ./core:/app/core
@@ -40,11 +43,40 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      opensearch:
+        condition: service_healthy
     networks:
       - agent_net
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     mem_limit: 350m
     mem_reservation: 300m
+
+  # OpenSearch (Hybrid Search)
+  opensearch:
+    build:
+      context: ./docker/opensearch
+      dockerfile: Dockerfile
+    image: hr-opensearch:3.5.0
+    container_name: hr_opensearch_container
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - DISABLE_SECURITY_PLUGIN=true
+      - OPENSEARCH_JAVA_OPTS=-Xms256m -Xmx256m
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    networks:
+      - agent_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    mem_limit: 512m
+    mem_reservation: 256m
 
   # Streamlit 프론트엔드
   streamlit:
@@ -83,3 +115,4 @@ networks:
 
 volumes:
   mysql_data:
+  opensearch_data:
